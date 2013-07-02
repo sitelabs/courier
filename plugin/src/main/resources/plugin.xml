@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugins xmlns="http://assets.1688.com/xml/ns/plugin.xsd"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://assets.1688.com/xml/ns/plugin.xsd plugin.xsd">
+	
+	<plugin id="httpChain"   class="com.alibaba.courier.plugin.DefaultHttpChain" index="0"/>
+	
+	<plugin id="pullToolFactory" class="com.alibaba.courier.plugin.PullToolFactory">
+		<properties>
+			<property key="stringUtil" value="org.apache.commons.lang3.StringUtils"/>
+		</properties>
+	</plugin>
+	
+</plugins>

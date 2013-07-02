@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="http://assets.1688.com/xml/ns/plugin.xsd"
+	xmlns="http://www.w3.org/2001/XMLSchema" xmlns:plugin="http://assets.1688.com/xml/ns/plugin.xsd"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
+	attributeFormDefault="unqualified" version="1.0" xml:lang="en">
+	<!-- *********************************************************** -->
+	<import namespace="http://www.w3.org/XML/1998/namespace"
+		schemaLocation="http://www.w3.org/2001/xml.xsd" />
+	<element name="plugins" type="plugin:plugin-appType">
+		<annotation>
+			<documentation>
+			</documentation>
+		</annotation>
+	</element>
+	<complexType name="plugin-appType">
+		<sequence>
+			<element name="plugin" type="plugin:pluginType" minOccurs="0"
+				maxOccurs="unbounded">
+			</element>
+		</sequence>
+	</complexType>
+	<complexType name="pluginType">
+		<sequence>
+			<element name="properties" type="plugin:propertiesType"
+				maxOccurs="unbounded" minOccurs="0">
+			</element>
+		</sequence>
+		<attribute name="id" type="string" use="optional" />
+		<attribute name="index" type="int"></attribute>
+		<attribute name="class" type="string"></attribute>
+		<attribute name="scope" type="string"></attribute>
+	</complexType>
+
+	<complexType name="propertiesType">
+		<sequence>
+			<element name="property" type="plugin:propertyType" maxOccurs="unbounded" minOccurs="0"></element>
+		</sequence>
+	</complexType>
+
+	<complexType name="propertyType">
+		<attribute name="key" type="string"></attribute>
+		<attribute name="value" type="string"></attribute>
+	</complexType>
+</schema>
