@@ -1,0 +1,11 @@
+# eclipse
+.classpath
+.project
+.settings
+
+.DS_Store
+
+# maven
+target/
+*.versionsBackup
+bin/
