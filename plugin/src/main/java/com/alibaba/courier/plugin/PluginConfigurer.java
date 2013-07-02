@@ -338,6 +338,7 @@ public class PluginConfigurer {
         } else {
             cls = Class.forName(pluginClassName);
         }
+
         Class<?> clazz = ASMClassUtil.getEnhancedClass(cls);
         Object obj = clazz.newInstance();
         return obj;

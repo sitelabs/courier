@@ -1,3 +1,4 @@
+import com.alibaba.courier.plugin.DefaultHttpChain;
 import com.alibaba.courier.plugin.asm.ASMClassUtil;
 
 /*
@@ -12,7 +13,7 @@ import com.alibaba.courier.plugin.asm.ASMClassUtil;
  * 
  * @author joe 2013-7-2 ÏÂÎç2:47:46
  */
-public class Test {
+public class TestDemo {
 
     /**
      * @param args
@@ -20,11 +21,13 @@ public class Test {
      * @throws InstantiationException
      */
     public static void main(String[] args) throws InstantiationException, IllegalAccessException {
-        System.out.println(int.class.getName());
+
+        String name = DefaultHttpChain.class.getName().replace('.', '/') + ".class";
+        System.out.println(name);
+        System.out.println(DefaultHttpChain.class.getClassLoader().getSystemResourceAsStream(name));
         Class<Demo> d = ASMClassUtil.getEnhancedClass(Demo.class);
         Demo demo = d.newInstance();
         demo.test("123");
 
     }
-
 }

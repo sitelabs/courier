@@ -10,10 +10,13 @@ package com.alibaba.courier.plugin.asm;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 
 import com.alibaba.china.courier.util.Utils;
 import com.alibaba.courier.asm.ClassReader;
 import com.alibaba.courier.asm.ClassWriter;
+import com.google.common.collect.Maps;
 
 /**
  * 利用asm实现AOP的工具类，逻辑来源于github
@@ -22,8 +25,8 @@ import com.alibaba.courier.asm.ClassWriter;
  */
 public class ASMClassUtil {
 
-    private static final String         SUFIX       = "$EnhancedByCourier";
-    private static final BytecodeLoader classLoader = new BytecodeLoader();
+    private static final String                      SUFIX        = "$EnhancedByCourier";
+    private static final Map<String, BytecodeLoader> classLoaders = Maps.newConcurrentMap();
 
     /**
      * <p>
@@ -38,12 +41,22 @@ public class ASMClassUtil {
     @SuppressWarnings("unchecked")
     public static <T> Class<T> getEnhancedClass(Class<T> clazz) {
         String enhancedClassName = clazz.getName() + SUFIX;
+        String clname = clazz.getClassLoader().toString();
+        BytecodeLoader classloader = null;
+        if (classLoaders.containsKey(clname)) {
+            classloader = classLoaders.get(clname);
+        } else {
+            classloader = new BytecodeLoader(clazz.getClassLoader());
+            classLoaders.put(clname, classloader);
+        }
         try {
-            return (Class<T>) ASMClassUtil.getClassLoader().loadClass(enhancedClassName);
+            return (Class<T>) classloader.loadClass(enhancedClassName);
         } catch (ClassNotFoundException classNotFoundException) {
             ClassReader reader = null;
             try {
-                reader = new ClassReader(clazz.getName());
+                String name = clazz.getName().replace('.', '/') + ".class";
+                InputStream in = clazz.getClassLoader().getResource(name).openStream();
+                reader = new ClassReader(in);
             } catch (IOException ioexception) {
             }
             ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
@@ -51,7 +64,8 @@ public class ASMClassUtil {
             reader.accept(visitor, 0);
             byte[] byteCodes = writer.toByteArray();
             // writeClazz(enhancedClassName, byteCodes);
-            Class<T> result = (Class<T>) getClassLoader().defineClass(enhancedClassName, byteCodes);
+
+            Class<T> result = (Class<T>) classloader.defineClass(enhancedClassName, byteCodes);
             return result;
         }
     }
@@ -63,21 +77,13 @@ public class ASMClassUtil {
      */
     private static class BytecodeLoader extends ClassLoader {
 
+        public BytecodeLoader(ClassLoader cl){
+            super(cl);
+        }
+
         public Class<?> defineClass(String className, byte[] byteCodes) {
             return super.defineClass(className, byteCodes, 0, byteCodes.length);
         }
-    }
-
-    /**
-     * <p>
-     * 获取{@link BytecodeLoader}
-     * </p>
-     * 
-     * @see BytecodeLoader
-     * @return
-     */
-    private static BytecodeLoader getClassLoader() {
-        return classLoader;
     }
 
     /**
