@@ -3,12 +3,12 @@ package com.alibaba.courier.plugin.asm;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import com.alibaba.courier.asm.ClassVisitor;
+import com.alibaba.courier.asm.ClassWriter;
+import com.alibaba.courier.asm.FieldVisitor;
+import com.alibaba.courier.asm.MethodVisitor;
+import com.alibaba.courier.asm.Opcodes;
+import com.alibaba.courier.asm.Type;
 
 /**
  * <p>

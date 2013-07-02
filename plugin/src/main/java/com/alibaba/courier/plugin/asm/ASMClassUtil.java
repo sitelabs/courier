@@ -11,24 +11,23 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
-
 import com.alibaba.china.courier.util.Utils;
+import com.alibaba.courier.asm.ClassReader;
+import com.alibaba.courier.asm.ClassWriter;
 
 /**
  * 利用asm实现AOP的工具类，逻辑来源于github
  * 
  * @author joe 2013-7-1 下午4:41:39
  */
-public class ClassUtil {
+public class ASMClassUtil {
 
     private static final String         SUFIX       = "$EnhancedByCourier";
     private static final BytecodeLoader classLoader = new BytecodeLoader();
 
     /**
      * <p>
-     * 返回代理类
+     * 返回asm动态生成的静态代理类
      * </p>
      * 
      * @param <T>
@@ -40,7 +39,7 @@ public class ClassUtil {
     public static <T> Class<T> getEnhancedClass(Class<T> clazz) {
         String enhancedClassName = clazz.getName() + SUFIX;
         try {
-            return (Class<T>) ClassUtil.getClassLoader().loadClass(enhancedClassName);
+            return (Class<T>) ASMClassUtil.getClassLoader().loadClass(enhancedClassName);
         } catch (ClassNotFoundException classNotFoundException) {
             ClassReader reader = null;
             try {

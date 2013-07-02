@@ -31,9 +31,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 
-import com.alibaba.china.courier.util.ObjectInvoker;
 import com.alibaba.china.courier.util.Utils.GolbalConstants;
 import com.alibaba.courier.plugin.annotation.Plugin;
+import com.alibaba.courier.plugin.asm.ASMClassUtil;
 import com.alibaba.courier.plugin.model.PluginInstance;
 import com.alibaba.courier.plugin.model.xml.PluginType;
 import com.alibaba.courier.plugin.model.xml.PluginsType;
@@ -71,6 +71,8 @@ public class PluginConfigurer {
     protected ConcurrentMap<String, Properties>           pluginConfigs       = Maps.newConcurrentMap();
 
     protected Properties                                  commonPluginConfigs = new Properties();
+
+    protected List<String>                                dynPluginids        = Lists.newArrayList();                     // 动态bean的id
 
     private PluginConfigurer(){
     }
@@ -208,18 +210,6 @@ public class PluginConfigurer {
         if (refPlugin == null && "pluginFactory".equals(pluginID)) {
             refPlugin = _pluginFactory;
         }
-
-        if (refPlugin != null && refPlugin instanceof DynamicBean) {
-            try {
-                Object loader = ObjectInvoker.handler(pluginID, refPlugin, "load");
-                PluginFactory.instance.warp(loader);
-                return loader;
-            } catch (Exception e) {
-                log.error("", e);
-            }
-            return null;
-        }
-
         return refPlugin;
     }
 
@@ -276,7 +266,12 @@ public class PluginConfigurer {
             log.error("init plugin:" + pluginID + " in " + pluginClassName + " error:", e);
             return;
         }
-
+        // 标记下是动态插件
+        if (pluginInstance instanceof DynamicBean) {
+            if (!dynPluginids.contains(pluginID)) {
+                dynPluginids.add(pluginID);
+            }
+        }
         List<Integer> indexs = pluginIndexs.get(pluginID);
         if (indexs == null) {
             indexs = new ArrayList<Integer>();
@@ -343,7 +338,8 @@ public class PluginConfigurer {
         } else {
             cls = Class.forName(pluginClassName);
         }
-        Object obj = cls.newInstance();
+        Class<?> clazz = ASMClassUtil.getEnhancedClass(cls);
+        Object obj = clazz.newInstance();
         return obj;
     }
 

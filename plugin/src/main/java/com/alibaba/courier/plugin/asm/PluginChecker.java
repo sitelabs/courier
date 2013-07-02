@@ -7,9 +7,13 @@
  */
 package com.alibaba.courier.plugin.asm;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 
-import com.alibaba.courier.plugin.DynamicBean;
+import org.apache.commons.lang3.StringUtils;
+
+import com.alibaba.china.courier.util.Utils.RequestParamUtil;
 import com.alibaba.courier.plugin.PluginFactory;
 
 /**
@@ -19,25 +23,47 @@ import com.alibaba.courier.plugin.PluginFactory;
  */
 public class PluginChecker {
 
+    private static final String CHECKSTR = "checker://";
+
     public static void check(Object obj) {
-
-        if (obj instanceof DynamicBean) {
-
+        String key = CHECKSTR + obj.getClass();
+        Boolean checked = RequestParamUtil.getContextParam(key);
+        if (checked != null && checked) {
+            return;
         }
 
+        RequestParamUtil.addContextParam("", obj);
+
+        Field[] fields = obj.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            String fieldName = field.getName();
+            Class<?> fieldClz = field.getType();
+            if (isPrivateType(fieldClz)) {
+                continue;
+            }
+            try {
+                Method method = obj.getClass().getMethod("set" + StringUtils.capitalize(field.getName()), fieldClz);
+                // 只处理动态插件
+                if (PluginFactory.instance.getDynamicPluginIDs().contains(fieldName)) {
+                    Object val = null;
+                    if (fieldClz.isAssignableFrom(List.class)) {
+                        val = PluginFactory.instance.getPlugins(fieldName);
+                    } else {
+                        val = PluginFactory.instance.getPlugin(fieldName);
+                    }
+                    if (val != null) {
+                        method.invoke(obj, val);
+                    }
+                }
+            } catch (Exception e) {
+            }
+        }
+        RequestParamUtil.addContextParam(CHECKSTR, true);
     }
 
-    /**
-     * @param args
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T get(String pluginID) {
-
-        T t = null;
-        if (t instanceof List) {
-            return (T) PluginFactory.instance.getPlugins(pluginID);
-        }
-        return PluginFactory.instance.getPlugin(pluginID);
+    private static boolean isPrivateType(Class<?> clz) {
+        return clz == int.class || clz == short.class || clz == boolean.class || clz == long.class
+               || clz == float.class || clz == double.class || clz == byte.class || clz.getName().startsWith("java.");
     }
 
 }

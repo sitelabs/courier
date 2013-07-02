@@ -1,4 +1,4 @@
-import com.alibaba.courier.plugin.asm.ClassUtil;
+import com.alibaba.courier.plugin.asm.ASMClassUtil;
 
 /*
  * Copyright 2013 Alibaba.com All right reserved. This software is the
@@ -20,10 +20,11 @@ public class Test {
      * @throws InstantiationException
      */
     public static void main(String[] args) throws InstantiationException, IllegalAccessException {
-        Class<Demo> d = ClassUtil.getEnhancedClass(Demo.class);
-
+        System.out.println(int.class.getName());
+        Class<Demo> d = ASMClassUtil.getEnhancedClass(Demo.class);
         Demo demo = d.newInstance();
         demo.test("123");
+
     }
 
 }

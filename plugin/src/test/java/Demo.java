@@ -14,6 +14,10 @@ import com.alibaba.courier.plugin.DynamicBean;
  */
 public class Demo implements DynamicBean<HelloService> {
 
+    private String       str;
+
+    private HelloService hello;
+
     public void init() {
 
     }
