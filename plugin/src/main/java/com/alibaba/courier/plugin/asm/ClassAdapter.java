@@ -94,7 +94,6 @@ public class ClassAdapter extends ClassVisitor implements Opcodes {
     public void visitEnd() {
         // 如果originalClass定义了私有成员变量，那么直接在visitMethod中复制originalClass的<init>会报错。
         // ALOAD 0
-        // INVOKESPECIAL cc/RoleService.<init>()V
         // RETURN
         // // 调用originalClassName的<init>方法，否则class不能实例化
         MethodVisitor mvInit = classWriter.visitMethod(ACC_PUBLIC, INIT, "()V", null, null);
@@ -103,6 +102,7 @@ public class ClassAdapter extends ClassVisitor implements Opcodes {
         mvInit.visitInsn(RETURN);
         mvInit.visitMaxs(0, 0);
         mvInit.visitEnd();
+        
 
         // addCheckMethod();
 

@@ -206,11 +206,10 @@ public class PluginFactory {
                     // 创建动态类
                     Class<T> clz = (Class<T>) ASMClassUtil.getEnhancedClass(loader.getClass());
                     t = clz.newInstance();
-                    // 将load对象拷贝给动态类
-                    Field[] fields = ReflectUtils.getVariableFields(loader.getClass());
-                    for (Field field : fields) {
-                        ReflectUtils.set(t, field.getName(), ReflectUtils.get(loader, field));
-                    }
+
+                    // 将load对象的属性值拷贝给动态类
+                    setInstanceField(t, loader, clz);
+
                     return loader;
                 } catch (Exception e) {
                     log.error(" invoke the " + obj.getClass() + ".load error", e);
@@ -220,6 +219,25 @@ public class PluginFactory {
             return (T) obj;
         }
         return null;
+    }
+
+    /**
+     * @param t
+     * @param loader
+     * @param clz
+     * @throws IllegalAccessException
+     */
+    public static <T> void setInstanceField(T target, T source, Class<T> clz) throws IllegalAccessException {
+        for (Field field : clz.getDeclaredFields()) {
+            field.setAccessible(true);
+            Object val = ReflectUtils.get(source, field);
+            field.set(target, val);
+        }
+        for (Field field : clz.getSuperclass().getDeclaredFields()) {
+            field.setAccessible(true);
+            Object val = ReflectUtils.get(source, field);
+            field.set(target, val);
+        }
     }
 
     /**

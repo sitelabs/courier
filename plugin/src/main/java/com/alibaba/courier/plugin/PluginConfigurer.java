@@ -33,7 +33,6 @@ import org.osgi.framework.BundleContext;
 
 import com.alibaba.china.courier.util.Utils.GolbalConstants;
 import com.alibaba.courier.plugin.annotation.Plugin;
-import com.alibaba.courier.plugin.asm.ASMClassUtil;
 import com.alibaba.courier.plugin.model.PluginInstance;
 import com.alibaba.courier.plugin.model.xml.PluginType;
 import com.alibaba.courier.plugin.model.xml.PluginsType;
@@ -154,16 +153,14 @@ public class PluginConfigurer {
             if (StringUtils.equals(field.getName(), "pluginConfig") && field.getType().equals(Map.class)) {
                 // init pluginConfig
                 field.set(obj, config);
+                setSupperField(obj, field, config);
                 continue;
             }
             Method method = null;
             try {
                 method = objCls.getMethod("set" + StringUtils.capitalize(field.getName()), field.getType());
                 if (method != null) {
-                    Object refPlugin = getRealPlugin(isArrayField, field.getName());
-                    if (refPlugin != null) {
-                        method.invoke(obj, refPlugin);
-                    }
+                    setField(obj, field, isArrayField, field.getName());
                 }
                 // ignor exception
             } catch (SecurityException e) {
@@ -191,7 +188,22 @@ public class PluginConfigurer {
                 log.debug("load plugin:" + pluginID + " success");
             }
             field.set(obj, refPlugin);
+            setSupperField(obj, field, refPlugin);
         }
+    }
+
+    /**
+     * @param obj
+     * @param field
+     * @param refPlugin
+     */
+    private void setSupperField(Object obj, Field field, Object refPlugin) {
+        // try {
+        // Field subField = obj.getClass().getSuperclass().getDeclaredField(field.getName());
+        // subField.setAccessible(true);
+        // subField.set(obj, refPlugin);
+        // } catch (Exception e) {
+        // }
     }
 
     /**
@@ -339,8 +351,9 @@ public class PluginConfigurer {
             cls = Class.forName(pluginClassName);
         }
 
-        Class<?> clazz = ASMClassUtil.getEnhancedClass(cls);
-        Object obj = clazz.newInstance();
+        // Class<?> clazz = ASMClassUtil.getEnhancedClass(cls);
+        // Object obj = clazz.newInstance();
+        Object obj = cls.newInstance();
         return obj;
     }
 

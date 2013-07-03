@@ -1,3 +1,6 @@
+import java.lang.reflect.Field;
+
+import com.alibaba.china.courier.util.ReflectUtils;
 import com.alibaba.courier.plugin.DefaultHttpChain;
 import com.alibaba.courier.plugin.asm.ASMClassUtil;
 
@@ -23,10 +26,20 @@ public class TestDemo {
     public static void main(String[] args) throws InstantiationException, IllegalAccessException {
 
         String name = DefaultHttpChain.class.getName().replace('.', '/') + ".class";
-        System.out.println(name);
-        System.out.println(DefaultHttpChain.class.getClassLoader().getSystemResourceAsStream(name));
         Class<Demo> d = ASMClassUtil.getEnhancedClass(Demo.class);
         Demo demo = d.newInstance();
+
+        Class<?> superClass = demo.getClass().getSuperclass();
+
+        Field[] fields = superClass.getDeclaredFields();
+
+        for (Field field : fields) {
+            field.setAccessible(true);
+            if (field.getType().isAssignableFrom(String.class)) {
+                field.set(demo, "123");
+            }
+        }
+
         demo.test("123");
 
     }
