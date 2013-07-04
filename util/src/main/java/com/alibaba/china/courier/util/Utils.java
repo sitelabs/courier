@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.alibaba.china.courier.model.RequestQueryParam;
-import com.google.common.collect.Maps;
 
 public class Utils {
 
@@ -35,16 +34,9 @@ public class Utils {
         public static final String TAGS_KEY        = "tags";
     }
 
-    /**
-     * 应用级别的全局固定参数
-     * 
-     * @author joe 2013-7-2 下午4:52:49
-     */
     public static class ApplicationParamUtil {
 
         private static final ConcurrentHashMap<String, Object> contextParams = new ConcurrentHashMap<String, Object>();
-
-        public static final String                             BEANS         = "beans";
 
         @SuppressWarnings("unchecked")
         public static <T> T getContextParam(String key) {
@@ -59,48 +51,8 @@ public class Utils {
             return contextParams;
         }
 
-        /**
-         * 获取bean
-         * 
-         * @param beanName
-         * @return
-         */
-        public static Object getBean(String beanName) {
-            Map<String, Object> beans = getBeans();
-            return beans.get(beanName);
-        }
-
-        /**
-         * @return
-         */
-        private static Map<String, Object> getBeans() {
-            Map<String, Object> beans = getContextParam(BEANS);
-            if (beans == null) {
-                beans = Maps.newConcurrentMap();
-                addContextParam(BEANS, beans);
-            }
-            return beans;
-        }
-
-        /**
-         * 手工添加bean
-         * 
-         * @param beanName
-         * @param obj
-         * @return
-         */
-        public static Object addBean(String beanName, Object obj) {
-            Map<String, Object> beans = getBeans();
-            return beans.put(beanName, obj);
-        }
-
     }
 
-    /**
-     * request级别的参数，随着每次的http请求而更新
-     * 
-     * @author joe 2013-7-2 下午4:53:15
-     */
     public static class RequestParamUtil {
 
         private static final ThreadLocal<Map<String, Object>> contextCache = new ThreadLocal<Map<String, Object>>();

@@ -31,11 +31,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 
+import com.alibaba.china.courier.util.ObjectInvoker;
 import com.alibaba.china.courier.util.Utils.GolbalConstants;
 import com.alibaba.courier.plugin.annotation.Plugin;
 import com.alibaba.courier.plugin.model.PluginInstance;
+import com.alibaba.courier.plugin.model.xml.PluginAppType;
 import com.alibaba.courier.plugin.model.xml.PluginType;
-import com.alibaba.courier.plugin.model.xml.PluginsType;
 import com.alibaba.courier.plugin.model.xml.PropertiesType;
 import com.alibaba.courier.plugin.model.xml.PropertyType;
 import com.google.common.collect.Lists;
@@ -70,8 +71,6 @@ public class PluginConfigurer {
     protected ConcurrentMap<String, Properties>           pluginConfigs       = Maps.newConcurrentMap();
 
     protected Properties                                  commonPluginConfigs = new Properties();
-
-    protected List<String>                                dynPluginids        = Lists.newArrayList();                     // 动态bean的id
 
     private PluginConfigurer(){
     }
@@ -153,14 +152,16 @@ public class PluginConfigurer {
             if (StringUtils.equals(field.getName(), "pluginConfig") && field.getType().equals(Map.class)) {
                 // init pluginConfig
                 field.set(obj, config);
-                setSupperField(obj, field, config);
                 continue;
             }
             Method method = null;
             try {
                 method = objCls.getMethod("set" + StringUtils.capitalize(field.getName()), field.getType());
                 if (method != null) {
-                    setField(obj, field, isArrayField, field.getName());
+                    Object refPlugin = getRealPlugin(isArrayField, field.getName());
+                    if (refPlugin != null) {
+                        method.invoke(obj, refPlugin);
+                    }
                 }
                 // ignor exception
             } catch (SecurityException e) {
@@ -188,22 +189,7 @@ public class PluginConfigurer {
                 log.debug("load plugin:" + pluginID + " success");
             }
             field.set(obj, refPlugin);
-            setSupperField(obj, field, refPlugin);
         }
-    }
-
-    /**
-     * @param obj
-     * @param field
-     * @param refPlugin
-     */
-    private void setSupperField(Object obj, Field field, Object refPlugin) {
-        // try {
-        // Field subField = obj.getClass().getSuperclass().getDeclaredField(field.getName());
-        // subField.setAccessible(true);
-        // subField.set(obj, refPlugin);
-        // } catch (Exception e) {
-        // }
     }
 
     /**
@@ -222,6 +208,18 @@ public class PluginConfigurer {
         if (refPlugin == null && "pluginFactory".equals(pluginID)) {
             refPlugin = _pluginFactory;
         }
+
+        if (refPlugin != null && refPlugin instanceof DynamicBean) {
+            try {
+                Object loader = ObjectInvoker.handler(pluginID, refPlugin, "load");
+                PluginFactory.instance.warp(loader);
+                return loader;
+            } catch (Exception e) {
+                log.error("", e);
+            }
+            return null;
+        }
+
         return refPlugin;
     }
 
@@ -278,12 +276,7 @@ public class PluginConfigurer {
             log.error("init plugin:" + pluginID + " in " + pluginClassName + " error:", e);
             return;
         }
-        // 标记下是动态插件
-        if (pluginInstance instanceof DynamicBean) {
-            if (!dynPluginids.contains(pluginID)) {
-                dynPluginids.add(pluginID);
-            }
-        }
+
         List<Integer> indexs = pluginIndexs.get(pluginID);
         if (indexs == null) {
             indexs = new ArrayList<Integer>();
@@ -312,12 +305,13 @@ public class PluginConfigurer {
         PluginInstance instance = new PluginInstance(pluginType.getId(), pluginType.getIndex(), pluginInstance);
         instance.setScope(pluginType.getScope());
 
-        List<PropertiesType> propertiesTypes = pluginType.getProperties();
-        if (!propertiesTypes.isEmpty()) {
+        PropertiesType propertiesType = pluginType.getProperties();
+
+        if (propertiesType != null) {
+            List<PropertyType> propertyTypes = propertiesType.getProperty();
             Properties prot = new Properties();
             instance.setConfig(prot);
-            for (PropertiesType propertiesType : propertiesTypes) {
-                PropertyType pt = propertiesType.getProperty();
+            for (PropertyType pt : propertyTypes) {
                 try {
                     prot.put(pt.getKey(), pt.getValue());
                 } catch (Exception e) {
@@ -350,9 +344,6 @@ public class PluginConfigurer {
         } else {
             cls = Class.forName(pluginClassName);
         }
-
-        // Class<?> clazz = ASMClassUtil.getEnhancedClass(cls);
-        // Object obj = clazz.newInstance();
         Object obj = cls.newInstance();
         return obj;
     }
@@ -402,7 +393,7 @@ public class PluginConfigurer {
     private void parseXML(List<PluginType> pts, InputStream in) {
         try {
             JAXBElement element = (JAXBElement) m.unmarshal(in);
-            PluginsType plugins = (PluginsType) element.getValue();
+            PluginAppType plugins = (PluginAppType) element.getValue();
             pts.addAll(plugins.getPlugin());
             in.close();
         } catch (Exception e) {

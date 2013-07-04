@@ -5,16 +5,14 @@
  * use it only in accordance with the terms of the license agreement you entered
  * into with Alibaba.com.
  */
-package com.alibaba.courier.plugin.asm;
+package com.alibaba.courier.plugin.proxy;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.alibaba.china.courier.util.Utils.RequestParamUtil;
-import com.alibaba.courier.plugin.PluginFactory;
 
 /**
  * 插件校验器
@@ -44,17 +42,17 @@ public class PluginChecker {
             try {
                 Method method = obj.getClass().getMethod("set" + StringUtils.capitalize(field.getName()), fieldClz);
                 // 只处理动态插件
-                if (PluginFactory.instance.getDynamicPluginIDs().contains(fieldName)) {
-                    Object val = null;
-                    if (fieldClz.isAssignableFrom(List.class)) {
-                        val = PluginFactory.instance.getPlugins(fieldName);
-                    } else {
-                        val = PluginFactory.instance.getPlugin(fieldName);
-                    }
-                    if (val != null) {
-                        method.invoke(obj, val);
-                    }
-                }
+                // if (PluginFactory.instance.getDynamicPluginIDs().contains(fieldName)) {
+                // Object val = null;
+                // if (fieldClz.isAssignableFrom(List.class)) {
+                // val = PluginFactory.instance.getPlugins(fieldName);
+                // } else {
+                // val = PluginFactory.instance.getPlugin(fieldName);
+                // }
+                // if (val != null) {
+                // method.invoke(obj, val);
+                // }
+                // }
             } catch (Exception e) {
             }
         }

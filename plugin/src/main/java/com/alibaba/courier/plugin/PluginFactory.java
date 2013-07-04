@@ -7,13 +7,13 @@
  */
 package com.alibaba.courier.plugin;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.logging.Log;
@@ -22,9 +22,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 
-import com.alibaba.china.courier.util.ReflectUtils;
-import com.alibaba.china.courier.util.Utils.RequestParamUtil;
-import com.alibaba.courier.plugin.asm.ASMClassUtil;
 import com.alibaba.courier.plugin.model.PluginInstance;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -91,43 +88,16 @@ public class PluginFactory {
         }
     }
 
-    /**
-     * 得到所有的插件集合
-     * 
-     * @return
-     */
-    public List<String> getPluginIDs() {
+    public Set<String> getPluginIDs() {
         PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
-        return Lists.newArrayList(pc.plugins.keySet().iterator());
+        return pc.plugins.keySet();
     }
 
-    /**
-     * 得到动态插件的id集合
-     * 
-     * @return
-     */
-    public List<String> getDynamicPluginIDs() {
-        PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
-        return pc.dynPluginids;
-    }
-
-    /**
-     * 从当前jar的插件容器进行查找插件
-     * 
-     * @param pluginID
-     * @return
-     */
     protected List<PluginInstance> getSimplePlugininstances(String pluginID) {
         PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
         return pc.plugins.get(pluginID);
     }
 
-    /**
-     * 从所有的插件容器中检索插件
-     * 
-     * @param pluginID
-     * @return
-     */
     @SuppressWarnings("unchecked")
     private List<PluginInstance> getPlugininstances(String pluginID) {
 
@@ -144,7 +114,7 @@ public class PluginFactory {
                 plugnInstanceClzs.add(pluginInstance.getInstance().getClass().getName());
             }
         }
-        // 开销巨大，从osgi插件容器中查找
+        // 开销巨大
         if (bundleContext != null) {
             try {
                 ServiceReference[] scr = bundleContext.getAllServiceReferences(PluginFactory.class.getName(), null);
@@ -184,68 +154,20 @@ public class PluginFactory {
         Collections.sort(plugins, new Comparator<PluginInstance>() {
 
             public int compare(PluginInstance mapping1, PluginInstance mapping2) {
-                return mapping1.getIndex().compareTo(mapping2.getIndex());
+                return mapping1.getIndex() < mapping2.getIndex() ? -1 : (mapping1.getIndex() == mapping2.getIndex() ? 0 : 1);
             }
         });
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings("unchecked")
     public <T> T getPlugin(String pluginID) {
         List<PluginInstance> plugins = getPlugininstances(pluginID);
         if (plugins != null && !plugins.isEmpty()) {
-            Object obj = plugins.get(0).getInstance();
-            if (obj instanceof DynamicBean) {
-                String key = pluginID + "_loader";
-                T t = RequestParamUtil.getContextParam(key);
-                if (t != null) {
-                    return t;
-                }
-
-                try {
-                    T loader = (T) ((DynamicBean) obj).load();
-                    // 创建动态类
-                    Class<T> clz = (Class<T>) ASMClassUtil.getEnhancedClass(loader.getClass());
-                    t = clz.newInstance();
-
-                    // 将load对象的属性值拷贝给动态类
-                    setInstanceField(t, loader, clz);
-
-                    return loader;
-                } catch (Exception e) {
-                    log.error(" invoke the " + obj.getClass() + ".load error", e);
-                    return null;
-                }
-            }
-            return (T) obj;
+            return (T) plugins.get(0).getInstance();
         }
         return null;
     }
 
-    /**
-     * @param t
-     * @param loader
-     * @param clz
-     * @throws IllegalAccessException
-     */
-    public static <T> void setInstanceField(T target, T source, Class<T> clz) throws IllegalAccessException {
-        for (Field field : clz.getDeclaredFields()) {
-            field.setAccessible(true);
-            Object val = ReflectUtils.get(source, field);
-            field.set(target, val);
-        }
-        for (Field field : clz.getSuperclass().getDeclaredFields()) {
-            field.setAccessible(true);
-            Object val = ReflectUtils.get(source, field);
-            field.set(target, val);
-        }
-    }
-
-    /**
-     * 获取插件集合
-     * 
-     * @param pluginID
-     * @return
-     */
     public <T> List<T> getPlugins(String pluginID) {
 
         List<PluginInstance> plugins = getPlugininstances(pluginID);
@@ -261,13 +183,6 @@ public class PluginFactory {
 
     }
 
-    /**
-     * 向容器注册制定的插件
-     * 
-     * @param pluginId
-     * @param className
-     * @param instance
-     */
     public void register(String pluginId, String className, Object instance) {
         PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
         PluginInstance ins = new PluginInstance(pluginId, instance);
@@ -282,11 +197,6 @@ public class PluginFactory {
         return bundleContext;
     }
 
-    /**
-     * 将对象放在插件容器中进行包装，主要进行依赖注入
-     * 
-     * @param object
-     */
     public void warp(Object object) {
         if (object != null) {
             PluginInstance instance = new PluginInstance(object.getClass().getName(), object);
@@ -299,13 +209,6 @@ public class PluginFactory {
         }
     }
 
-    /**
-     * 自动加载class类
-     * 
-     * @param clz
-     * @return
-     * @throws ClassNotFoundException
-     */
     public static Class<?> loadClass(String clz) throws ClassNotFoundException {
         if (instance != null) {
             try {

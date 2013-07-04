@@ -25,13 +25,12 @@ public class RequestQueryParam implements Serializable, Cloneable {
 
     public boolean              logined;                                // 是否登陆
 
-    public String               uid;                                    // 当前网站的唯一用户id，目前等于卖家ID
+    public String               uid;                                    // 会员的唯一id
 
     public String               loginId;                                // 登录id
 
     public String               lastLoginId;                            // 上一次登录id
-
-    public String               visitorId;                              // 当前浏览者的会员ID
+    public String               visitorId;                              // 当前浏览者id
 
     public String               visitorIp;                              // 当前浏览者的Ip地址
 

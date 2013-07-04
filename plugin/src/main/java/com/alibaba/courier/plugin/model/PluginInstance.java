@@ -18,7 +18,7 @@ import com.google.common.collect.Lists;
  */
 public class PluginInstance {
 
-    private Integer    index = 10;
+    private int        index = 10;
     private Object     instance;
     private String     id;
     private String     scope;
@@ -59,11 +59,11 @@ public class PluginInstance {
         }
     }
 
-    public Integer getIndex() {
+    public int getIndex() {
         return index;
     }
 
-    public void setIndex(Integer index) {
+    public void setIndex(int index) {
         this.index = index;
     }
 
