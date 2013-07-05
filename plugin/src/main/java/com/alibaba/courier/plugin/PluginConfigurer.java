@@ -83,6 +83,18 @@ public class PluginConfigurer {
 
         _pluginFactory = pluginFactory;
 
+        initPlugin();
+
+        if (bundleContext != null && this.url != null) {
+            bundleContext.registerService(PluginFactory.class.getName(), pluginFactory, null);
+        }
+
+    }
+
+    /**
+     * 
+     */
+    public void initPlugin() {
         List<PluginType> pts = scan();
         if (pts.isEmpty()) {
             return;
@@ -91,11 +103,6 @@ public class PluginConfigurer {
         for (PluginType pluginType : pts) {
             parsePlugin(pluginType, pluginIndexs);
         }
-
-        if (bundleContext != null && this.url != null) {
-            bundleContext.registerService(PluginFactory.class.getName(), pluginFactory, null);
-        }
-
     }
 
     /**
@@ -294,11 +301,6 @@ public class PluginConfigurer {
         if (indexs == null) {
             indexs = new ArrayList<Integer>();
             pluginIndexs.put(pluginID, indexs);
-        } else {
-            // use the index value be sure no reduplicate plugin instance
-            if (indexs.contains(pluginType.getIndex())) {
-                return;
-            }
         }
         indexs.add(pluginType.getIndex());
 

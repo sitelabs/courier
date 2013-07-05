@@ -20,7 +20,6 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 
 import com.alibaba.courier.plugin.model.PluginInstance;
@@ -50,10 +49,11 @@ public class PluginFactory {
         if (this._pc == null) {
             PluginConfigurer pc = url == null ? PluginConfigurer.instance : new PluginConfigurer(url);
             this._pc = pc;
+            _pc.setUrl(url);
+            _pc.init(bundleContext, this);
+        } else {
+            _pc.initPlugin();
         }
-        _pc.setUrl(url);
-        _pc.init(bundleContext, this);
-
         String msg = "";
         if (bundleContext != null) {
             msg = bundleContext.getBundle().toString();
@@ -133,19 +133,22 @@ public class PluginFactory {
             try {
                 ServiceReference[] scr = bundleContext.getAllServiceReferences(PluginFactory.class.getName(), null);
                 for (ServiceReference serviceReference : scr) {
-                    PluginFactory pluginFactory = (PluginFactory) bundleContext.getService(serviceReference);
-                    List<PluginInstance> bundlePlugins = pluginFactory.getSimplePlugininstances(pluginID);
-                    if (bundlePlugins != null) {
-                        for (PluginInstance pluginInstance : bundlePlugins) {
-                            String clzName = pluginInstance.getInstance().getClass().getName();
-                            if (!plugnInstanceClzs.contains(clzName)) {
-                                plugins.add(pluginInstance);
+                    try {
+                        PluginFactory pluginFactory = (PluginFactory) bundleContext.getService(serviceReference);
+                        List<PluginInstance> bundlePlugins = pluginFactory.getSimplePlugininstances(pluginID);
+                        if (bundlePlugins != null) {
+                            for (PluginInstance pluginInstance : bundlePlugins) {
+                                String clzName = pluginInstance.getInstance().getClass().getName();
+                                if (!plugnInstanceClzs.contains(clzName)) {
+                                    plugins.add(pluginInstance);
+                                }
                             }
                         }
-
+                    } catch (Exception e) {
+                        log.error("", e);
                     }
                 }
-            } catch (InvalidSyntaxException e) {
+            } catch (Exception e) {
                 log.error("", e);
             }
         }
@@ -211,7 +214,6 @@ public class PluginFactory {
     public BundleContext getBundleContext() {
         return bundleContext;
     }
-
 
     public static Class<?> loadClass(String clz) throws ClassNotFoundException {
         if (instance != null) {
