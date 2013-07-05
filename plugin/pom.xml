@@ -27,8 +27,6 @@
 		<dependency>
 			<groupId>com.alibaba.external</groupId>
 			<artifactId>java.servlet</artifactId>
-			<scope>provided</scope>
-			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.felix</groupId>
