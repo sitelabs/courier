@@ -212,17 +212,6 @@ public class PluginFactory {
         return bundleContext;
     }
 
-    public void warp(Object object) {
-        if (object != null) {
-            PluginInstance instance = new PluginInstance(object.getClass().getName(), object);
-
-            try {
-                _pc.pluginIoc(instance);
-            } catch (Exception e) {
-                log.error("", e);
-            }
-        }
-    }
 
     public static Class<?> loadClass(String clz) throws ClassNotFoundException {
         if (instance != null) {
