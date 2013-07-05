@@ -4,11 +4,11 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>courier</artifactId>
-		<groupId>com.alibaba.china.shared</groupId>
+		<groupId>com.alibaba.sitelabs.shared</groupId>
 		<version>1.0.3</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-	<groupId>com.alibaba.china.shared</groupId>
+	<groupId>com.alibaba.sitelabs.shared</groupId>
 	<artifactId>courier.plugin</artifactId>
 	<name>courier.plugin</name>
 	<packaging>jar</packaging>

@@ -8,7 +8,7 @@
 		<version>1.0.2</version>
 	</parent>
 
-	<groupId>com.alibaba.china.shared</groupId>
+	<groupId>com.alibaba.sitelabs.shared</groupId>
 	<artifactId>courier</artifactId>
 	<version>1.0.3</version>
 	<packaging>pom</packaging>
