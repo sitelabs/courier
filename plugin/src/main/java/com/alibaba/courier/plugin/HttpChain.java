@@ -10,6 +10,8 @@ package com.alibaba.courier.plugin;
 import javax.servlet.http.HttpServletRequest;
 
 /**
+ * 提供Http链式执行服务
+ * 
  * @author joe 2013-6-25 下午4:24:55
  */
 public interface HttpChain {

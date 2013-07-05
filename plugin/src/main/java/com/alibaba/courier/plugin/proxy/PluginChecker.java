@@ -12,6 +12,8 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.alibaba.china.courier.util.ObjectInvoker;
 import com.alibaba.china.courier.util.Utils.ApplicationParamUtil;
@@ -21,9 +23,16 @@ import com.alibaba.courier.plugin.PluginFactory;
 /**
  * 插件校验器
  * 
+ * <pre>
+ * 1、检测包含有动态bean属性的类
+ * 2、对动态Bean进行request级别的赋值，以确保动态Bean的数据都是实时的
+ * </pre>
+ * 
  * @author joe 2013-7-2 下午2:56:22
  */
 public class PluginChecker {
+
+    private static final Log    log      = LogFactory.getLog(PluginChecker.class);
 
     private static final String CHECKSTR = "checker://";
 
@@ -77,9 +86,9 @@ public class PluginChecker {
 
                         method.invoke(obj, result);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        log.error("", e);
                     }
-                    
+
                 }
 
             } catch (Exception e) {

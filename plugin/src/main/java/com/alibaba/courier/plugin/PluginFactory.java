@@ -45,6 +45,9 @@ public class PluginFactory {
 
     private List<String>                                      dynamicPluginIDs    = Lists.newArrayList();
 
+    /**
+     * 初始化插件容器，解析插件配置和完成类加载过程
+     */
     public void initContainer(URL url) {
         if (this._pc == null) {
             PluginConfigurer pc = url == null ? PluginConfigurer.instance : new PluginConfigurer(url);
@@ -61,15 +64,24 @@ public class PluginFactory {
         System.out.println(msg + " module startup success!");
     }
 
+    /**
+     * 初始化插件容器，解析插件配置和完成类加载过程
+     */
     public void initContainer() {
         initContainer(null);
     }
 
+    /**
+     * 执行插件的AOP，依赖注入
+     */
     public void initPluginIoc() {
         PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
         pc.initPluginIoc();
     }
 
+    /**
+     * 回调插件的init函数
+     */
     public void initPlugin() {
         PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
         for (Map.Entry<String, List<PluginInstance>> entry : pc.plugins.entrySet()) {
@@ -103,6 +115,11 @@ public class PluginFactory {
         return pc.plugins.keySet();
     }
 
+    /**
+     * 获取动态插件的id集合
+     * 
+     * @return
+     */
     public List<String> getDynamicPluginIDs() {
         return dynamicPluginIDs;
     }
@@ -200,6 +217,13 @@ public class PluginFactory {
 
     }
 
+    /**
+     * 提供注册机制，让各种对象可以轻松的注册到容器中
+     * 
+     * @param pluginId
+     * @param className
+     * @param instance
+     */
     public void register(String pluginId, String className, Object instance) {
         PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
         PluginInstance ins = new PluginInstance(pluginId, instance);

@@ -8,7 +8,7 @@
 package com.alibaba.courier.plugin;
 
 /**
- * loader
+ * Request级别的动态Bean
  * 
  * @author joe 2013-6-25 pm1:41:42
  */
