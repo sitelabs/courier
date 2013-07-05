@@ -12,7 +12,7 @@
 	<artifactId>courier.util</artifactId>
 	<name>courier.util</name>
 	<packaging>jar</packaging>
-	<version>1.0.3</version>
+	<version>1.0.3-SNAPSHOT</version>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
