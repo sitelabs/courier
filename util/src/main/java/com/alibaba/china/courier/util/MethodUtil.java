@@ -60,9 +60,10 @@ public class MethodUtil {
      * @param args
      * @return
      */
+    @SuppressWarnings("unchecked")
     public static <T> T getCacheMethodResult(Object obj, String method, Object[] args) {
         String key = getCacheMethodKey(obj, method, args);
-        return RequestParamUtil.getContextParam(key);
+        return (T) RequestParamUtil.getContextParam(key);
     }
 
 }

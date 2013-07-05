@@ -43,7 +43,7 @@ public class ObjectInvoker {
         }
 
         // 从当前线程缓存内取出缓存结果，避免重复调用
-        R cacheResult = MethodUtil.getCacheMethodResult(uniqueName, methodName, params);
+        R cacheResult = (R) MethodUtil.getCacheMethodResult(uniqueName, methodName, params);
         if (cacheResult != null) {
             return cacheResult;
         }
