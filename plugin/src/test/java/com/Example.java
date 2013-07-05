@@ -5,12 +5,24 @@
  * use it only in accordance with the terms of the license agreement you entered
  * into with Alibaba.com.
  */
-package com.alibaba.courier.plugin.proxy;
+package com;
+
 
 /**
- * 类ClassUtil.java的实现描述：TODO 类实现描述 
- * @author joe 2013年7月4日 下午9:59:31
+ * 类Example.java的实现描述：TODO 类实现描述
+ * 
+ * @author joe 2013-7-5 下午1:15:35
  */
-public class ClassUtil {
+public class Example {
+
+    private String xxx;
+
+    public String getXxx() {
+        return xxx;
+    }
+
+    public void setXxx(String xxx) {
+        this.xxx = xxx;
+    }
 
 }

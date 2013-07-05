@@ -31,7 +31,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 
-import com.alibaba.china.courier.util.ObjectInvoker;
 import com.alibaba.china.courier.util.Utils.GolbalConstants;
 import com.alibaba.courier.plugin.annotation.Plugin;
 import com.alibaba.courier.plugin.model.PluginInstance;
@@ -39,6 +38,7 @@ import com.alibaba.courier.plugin.model.xml.PluginAppType;
 import com.alibaba.courier.plugin.model.xml.PluginType;
 import com.alibaba.courier.plugin.model.xml.PropertiesType;
 import com.alibaba.courier.plugin.model.xml.PropertyType;
+import com.alibaba.courier.plugin.proxy.ClassProxy;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -131,7 +131,22 @@ public class PluginConfigurer {
     public void pluginIoc(PluginInstance pluginInstance) throws IllegalArgumentException, IllegalAccessException {
         Object obj = pluginInstance.getInstance();
 
+        if (obj == null) {
+            return;
+        }
+
         Class objCls = obj.getClass();
+
+        Field proxy = null;
+        // 如果有proxy变量，则对proxy的对象进行ioc
+        try {
+            proxy = objCls.getDeclaredField(ClassProxy.PROXY);
+        } catch (Exception e1) {
+        }
+        if (proxy != null) {
+            obj = proxy.get(obj);
+            objCls = proxy.getType();
+        }
 
         Field[] fs = objCls.getDeclaredFields();
 
@@ -171,6 +186,7 @@ public class PluginConfigurer {
             }
 
         }
+
     }
 
     /**
@@ -208,18 +224,6 @@ public class PluginConfigurer {
         if (refPlugin == null && "pluginFactory".equals(pluginID)) {
             refPlugin = _pluginFactory;
         }
-
-        if (refPlugin != null && refPlugin instanceof DynamicBean) {
-            try {
-                Object loader = ObjectInvoker.handler(pluginID, refPlugin, "load");
-                PluginFactory.instance.warp(loader);
-                return loader;
-            } catch (Exception e) {
-                log.error("", e);
-            }
-            return null;
-        }
-
         return refPlugin;
     }
 
@@ -272,8 +276,17 @@ public class PluginConfigurer {
         Object pluginInstance = null;
         try {
             pluginInstance = newPluginInstance(pluginClassName);
+            // 登记下动态bean
+            if (pluginInstance instanceof DynamicBean) {
+                PluginFactory pf = PluginFactory.instance == null ? _pluginFactory : PluginFactory.instance;
+                if (pf != null && !pf.getDynamicPluginIDs().contains(pluginID)) {
+                    pf.getDynamicPluginIDs().add(pluginID);
+                }
+                pluginID += ClassProxy.PROXY;
+                pluginType.setId(pluginID);
+            }
         } catch (Exception e) {
-            log.error("init plugin:" + pluginID + " in " + pluginClassName + " error:", e);
+            log.error("parse plugin:" + pluginID + " in " + pluginClassName + " error:", e);
             return;
         }
 
@@ -345,7 +358,14 @@ public class PluginConfigurer {
             cls = Class.forName(pluginClassName);
         }
         Object obj = cls.newInstance();
-        return obj;
+        // 替换为静态AOP对象
+        Class<?> newC = ClassProxy.create(cls);
+        Object newO = newC.newInstance();
+        Field field = newC.getDeclaredField(ClassProxy.PROXY);
+        field.setAccessible(true);
+        field.set(newO, obj);
+
+        return newO;
     }
 
     /**

@@ -7,6 +7,7 @@
  */
 package com.alibaba.courier.plugin;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collections;
@@ -23,6 +24,7 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 
 import com.alibaba.courier.plugin.model.PluginInstance;
+import com.alibaba.courier.plugin.proxy.ClassProxy;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -41,6 +43,8 @@ public class PluginFactory {
     public static PluginFactory                               instance;
 
     public static ConcurrentMap<String, List<PluginInstance>> pluginInstanceCache = Maps.newConcurrentMap();
+
+    private List<String>                                      dynamicPluginIDs    = Lists.newArrayList();
 
     public void initContainer(URL url) {
         if (this._pc == null) {
@@ -79,7 +83,13 @@ public class PluginFactory {
                 }
                 try {
                     if (method != null) {
-                        method.invoke(pluginInstance.getInstance(), null);
+                        Field field = pluginInstance.getInstance().getClass().getDeclaredField(ClassProxy.PROXY);
+                        if (field != null) {
+                            Object proxy = field.get(pluginInstance.getInstance());
+                            proxy.getClass().getMethod("init", null).invoke(proxy, null);
+                        } else {
+                            method.invoke(pluginInstance.getInstance(), null);
+                        }
                     }
                 } catch (Exception e) {
                     log.error("", e);
@@ -91,6 +101,10 @@ public class PluginFactory {
     public Set<String> getPluginIDs() {
         PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
         return pc.plugins.keySet();
+    }
+
+    public List<String> getDynamicPluginIDs() {
+        return dynamicPluginIDs;
     }
 
     protected List<PluginInstance> getSimplePlugininstances(String pluginID) {
@@ -186,6 +200,7 @@ public class PluginFactory {
     public void register(String pluginId, String className, Object instance) {
         PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
         PluginInstance ins = new PluginInstance(pluginId, instance);
+
         pc.plugins.put(pluginId, Lists.newArrayList(ins));
     }
 
