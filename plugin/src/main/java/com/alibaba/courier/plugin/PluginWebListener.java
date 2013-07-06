@@ -15,14 +15,12 @@ import javax.servlet.ServletContextListener;
  */
 public class PluginWebListener implements ServletContextListener {
 
-    @Override
     public void contextInitialized(ServletContextEvent sce) {
         PluginFactory pluginFactory = new PluginFactory();
         pluginFactory.initContainer();
         pluginFactory.initPlugin();
     }
 
-    @Override
     public void contextDestroyed(ServletContextEvent sce) {
 
     }

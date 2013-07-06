@@ -61,17 +61,14 @@ public class StringResource extends AbstractResource {
         parseName();
     }
 
-    @Override
     public String getAsString() {
         return stringContent;
     }
 
-    @Override
     public boolean exist() {
         return false;
     }
 
-    @Override
     public String getSimpleName() {
         return simpleName;
     }

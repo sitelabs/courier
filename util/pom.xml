@@ -12,7 +12,6 @@
 	<artifactId>courier.util</artifactId>
 	<name>courier.util</name>
 	<packaging>jar</packaging>
-	<version>1.0.0.1</version>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>

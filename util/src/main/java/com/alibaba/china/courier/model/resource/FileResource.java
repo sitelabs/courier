@@ -54,7 +54,6 @@ public class FileResource extends AbstractResource {
         this.extension = name.substring(index + 1, name.length());
     }
 
-    @Override
     public String getAsString() {
         if (lastModified != getLastModified()) {
             try {
@@ -72,7 +71,6 @@ public class FileResource extends AbstractResource {
         return null;
     }
 
-    @Override
     public String getSimpleName() {
         return file.getName();
     }
@@ -81,7 +79,6 @@ public class FileResource extends AbstractResource {
         return new FileInputStream(file);
     }
 
-    @Override
     public boolean exist() {
         return file != null && file.exists();
     }

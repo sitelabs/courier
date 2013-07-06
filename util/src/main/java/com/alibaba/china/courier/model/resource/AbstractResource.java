@@ -78,12 +78,10 @@ abstract public class AbstractResource implements Resource, Serializable {
         return this.isFolder;
     }
 
-    @Override
     public Resource getParent() {
         return null;
     }
 
-    @Override
     public List<Resource> getChildren() {
         return Collections.EMPTY_LIST;
     }
