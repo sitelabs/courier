@@ -55,6 +55,7 @@ public class PluginFactory {
             _pc.setUrl(url);
             _pc.init(bundleContext, this);
         } else {
+            _pc.setUrl(url);
             _pc.initPlugin();
         }
         String msg = "";
