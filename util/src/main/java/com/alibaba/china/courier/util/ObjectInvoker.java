@@ -48,6 +48,10 @@ public class ObjectInvoker {
             return cacheResult;
         }
 
+        if (obj == null) {
+            return null;
+        }
+
         Method method = null;
 
         Method[] mts = obj.getClass().getDeclaredMethods();
