@@ -143,7 +143,7 @@ public class PluginFactory {
             plugins = Lists.newArrayList();
         } else {
             for (PluginInstance pluginInstance : plugins) {
-                String name = pluginInstance.getInstance().getClass().getName();
+                String name = pluginInstance.getInstance().toString();
                 if (!plugnInstanceClzs.contains(name)) {
                     plugnInstanceClzs.add(name);
                 }
@@ -159,7 +159,7 @@ public class PluginFactory {
                         List<PluginInstance> bundlePlugins = pluginFactory.getSimplePlugininstances(pluginID);
                         if (bundlePlugins != null) {
                             for (PluginInstance pluginInstance : bundlePlugins) {
-                                String clzName = pluginInstance.getInstance().getClass().getName();
+                                String clzName = pluginInstance.getInstance().toString();
                                 if (!plugnInstanceClzs.contains(clzName)) {
                                     plugins.add(pluginInstance);
                                     plugnInstanceClzs.add(clzName);
