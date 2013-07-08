@@ -70,7 +70,7 @@ public class PluginChecker {
             }
             try {
                 // 如果变量已经有值，则不处理
-                if (field.get(obj) != null) {
+                if (field.get(obj) != null && !isDynBeanField) {
                     continue;
                 }
             } catch (Exception e1) {
