@@ -10,6 +10,7 @@ package com.alibaba.courier.plugin;
 import java.util.Enumeration;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -29,7 +30,7 @@ import com.alibaba.china.courier.util.Utils.RequestParamUtil;
 public class DefaultHttpChain implements HttpChain {
 
     @SuppressWarnings("rawtypes")
-    public void chain(HttpServletRequest request) {
+    public ChainReturn chain(HttpServletRequest request, HttpServletResponse resp) {
 
         RequestQueryParam requestParam = RequestParamUtil.getQueryParam();
 
@@ -77,7 +78,7 @@ public class DefaultHttpChain implements HttpChain {
 
         String referer = request.getHeader(HttpParamConstants.REFERER);
         requestParam.referer = referer;
-
+        return ChainReturn.NEXT;
     }
 
     public String getSiteId(HttpServletRequest request) {

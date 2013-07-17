@@ -8,6 +8,7 @@
 package com.alibaba.courier.plugin;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 提供Http链式执行服务
@@ -16,6 +17,14 @@ import javax.servlet.http.HttpServletRequest;
  */
 public interface HttpChain {
 
-    public void chain(HttpServletRequest req);
+    public ChainReturn chain(HttpServletRequest req, HttpServletResponse resp);
 
+    /**
+     * chain的返回类型
+     * 
+     * @author joe 2013年7月17日 上午10:04:11
+     */
+    public enum ChainReturn {
+        BREAK, NEXT
+    }
 }
