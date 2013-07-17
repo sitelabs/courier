@@ -21,7 +21,7 @@
 		<dependency>
 			<groupId>com.alibaba.china.shared</groupId>
 			<artifactId>courier.util</artifactId>
-			<version>1.0.0.1</version>
+			<version>${pom.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.alibaba.external</groupId>
