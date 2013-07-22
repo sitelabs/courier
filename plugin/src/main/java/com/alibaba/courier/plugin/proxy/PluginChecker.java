@@ -43,7 +43,10 @@ public class PluginChecker {
         if (needLoadproxy(instance, proxy)) {
             return;
         }
-        String key = CHECKSTR + proxy.getClass();
+        if (proxy == null) {
+            return;
+        }
+        String key = CHECKSTR + instance.toString();
         // 是否有动态bean参数
         Boolean isDynClass = ApplicationParamUtil.getContextParam(key);
         if (isDynClass != null && !isDynClass) {
@@ -61,7 +64,7 @@ public class PluginChecker {
         for (; clazz != Object.class; clazz = clazz.getSuperclass()) {
             Field[] fields = clazz.getDeclaredFields();
             for (Field field : fields) {
-                isDynClass = checkField(proxy, field, isDynClass);
+                isDynClass = checkField(proxy, field);
                 if (isDynClass) {
                     ApplicationParamUtil.addContextParam(key, isDynClass);
                 }
@@ -92,6 +95,7 @@ public class PluginChecker {
                     return true;
                 }
             } catch (Exception e) {
+                log.error("", e);
             }
         }
         return false;
@@ -104,25 +108,17 @@ public class PluginChecker {
      * @param field
      * @param isDynClass
      */
-    private static boolean checkField(Object obj, Field field, Boolean isDynClass) {
+    private static boolean checkField(Object obj, Field field) {
         field.setAccessible(true);
         String fieldName = field.getName();
         boolean isDynBeanField = PluginFactory.instance.getDynamicPluginIDs().contains(fieldName);
-        if (isDynBeanField) {
-            isDynClass = true;
+        if (!isDynBeanField) {
+            return false;
         }
 
         // 常量不处理
         Class<?> fieldClz = field.getType();
         if (isPrivateType(fieldClz)) {
-            return false;
-        }
-        try {
-            // 如果变量已经有值，则不处理
-            if (field.get(obj) != null && !isDynBeanField) {
-                return false;
-            }
-        } catch (Exception e1) {
             return false;
         }
         try {

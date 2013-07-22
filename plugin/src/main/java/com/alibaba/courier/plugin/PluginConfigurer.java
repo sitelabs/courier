@@ -186,6 +186,7 @@ public class PluginConfigurer {
                     }
                 }
                 // ignor exception
+            } catch (IllegalArgumentException e) {
             } catch (SecurityException e) {
             } catch (NoSuchMethodException e) {
             } catch (Exception e) {

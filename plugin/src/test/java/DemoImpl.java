@@ -27,6 +27,8 @@ public class DemoImpl extends Demo {
 
     private boolean bol;
 
+    private RefDemo refDemo;
+
     /**
      * @return the hello
      */
@@ -53,6 +55,20 @@ public class DemoImpl extends Demo {
      */
     public void setBol(boolean bol) {
         this.bol = bol;
+    }
+
+    /**
+     * @return the refDemo
+     */
+    public RefDemo getRefDemo() {
+        return refDemo;
+    }
+
+    /**
+     * @param refDemo the refDemo to set
+     */
+    public void setRefDemo(RefDemo refDemo) {
+        this.refDemo = refDemo;
     }
 
 }

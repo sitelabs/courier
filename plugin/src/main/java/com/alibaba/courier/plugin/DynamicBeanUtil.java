@@ -8,9 +8,11 @@
 package com.alibaba.courier.plugin;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import com.alibaba.china.courier.util.Utils.RequestParamUtil;
 import com.alibaba.courier.plugin.proxy.ClassProxy;
+import com.google.common.collect.Maps;
 
 /**
  * 动态类的辅助工具类
@@ -19,10 +21,12 @@ import com.alibaba.courier.plugin.proxy.ClassProxy;
  */
 public class DynamicBeanUtil {
 
-    public static final String  loadMethodName = "load";
+    public static final String                 loadMethodName     = "load";
 
-    private static final String proxyCacheStr  = ".load";
-    private static final String realCacheStr   = ".realload";
+    private static final String                proxyCacheStr      = ".load";
+    private static final String                realCacheStr       = ".realload";
+
+    private static final Map<String, Class<?>> cacheMethodReturns = Maps.newConcurrentMap();
 
     /**
      * 加载动态Bean
@@ -36,16 +40,25 @@ public class DynamicBeanUtil {
         if (bean == null) {
             return null;
         }
-        String key = bean.getClass().getName() + proxyCacheStr;
+
+        Class<?> returnType = cacheMethodReturns.get(pluginID);
+        if (returnType == null) {
+            try {
+                Method method = bean.getClass().getMethod(loadMethodName, null);
+                returnType = method.getReturnType();
+                cacheMethodReturns.put(pluginID, returnType);
+            } catch (Exception e1) {
+                return null;
+            }
+        }
+
+        String key = returnType.getName() + proxyCacheStr;
         Object result = RequestParamUtil.getContextParam(key);
         if (result != null) {
             return result;
         }
-
         try {
             // 获取动态Bean的load方法 返回类型
-            Method method = bean.getClass().getMethod(loadMethodName, null);
-            Class<?> returnType = method.getReturnType();
             Class<?> proxyClass = ClassProxy.create(returnType);
             result = proxyClass.newInstance();
             ClassProxy.setPluginIDField(result, pluginID);
@@ -83,13 +96,16 @@ public class DynamicBeanUtil {
         String key = pluginID + realCacheStr;
         Object result = RequestParamUtil.getContextParam(key);
         if (result != null) {
+            if (instance != null && ClassProxy.getFieldVal(ClassProxy.PROXY, instance) == null) {
+                ClassProxy.setProxyField(instance, result);
+            }
             return result;
         }
         result = getResult(pluginID);
 
-        Class<?> proxyClass = ClassProxy.create(result.getClass());
         if (instance == null) {
             try {
+                Class<?> proxyClass = ClassProxy.create(result.getClass());
                 instance = proxyClass.newInstance();
             } catch (Exception e) {
             }

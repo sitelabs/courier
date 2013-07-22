@@ -31,7 +31,10 @@ public class Test {
 
         System.out.println(demo.getHellostr() + ":" + demo.getHello());
 
-        System.out.println(demo.getHellostr() + ":" + demo.getHello().getWord());
+        RefDemo refDemo = (RefDemo) DynamicBeanUtil.getProxy("refDemo", null);
+        System.out.println(refDemo.getRefStr());
+
+        System.out.println(demo.getHellostr() + ":" + demo.getHello().getWord() + ":" + demo.getRefDemo().getRefStr());
 
     }
 }
