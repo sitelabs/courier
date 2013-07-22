@@ -12,7 +12,7 @@
  */
 public class RefDemo {
 
-    private String refStr;
+    private String refStr = "123";
 
     /**
      * @return the refStr

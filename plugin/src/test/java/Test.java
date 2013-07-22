@@ -1,3 +1,5 @@
+import com.alibaba.courier.plugin.proxy.ClassProxy;
+
 /*
  * Copyright 2013 Alibaba.com All right reserved. This software is the
  * confidential and proprietary information of Alibaba.com ("Confidential
@@ -5,9 +7,6 @@
  * use it only in accordance with the terms of the license agreement you entered
  * into with Alibaba.com.
  */
-
-import com.alibaba.courier.plugin.DynamicBeanUtil;
-import com.alibaba.courier.plugin.PluginFactory;
 
 /**
  * 类Test.java的实现描述：TODO 类实现描述
@@ -21,20 +20,21 @@ public class Test {
      */
     public static void main(String[] args) throws Exception {
 
-        PluginFactory pluginFactory = new PluginFactory();
-        pluginFactory.initContainer();
-        pluginFactory.initPluginIoc();
-        pluginFactory.initPlugin();
-        PluginFactory.instance = pluginFactory;
+        Class<DemoImpl> clzz = ClassProxy.create(DemoImpl.class);
+        DemoImpl di = clzz.newInstance();
+        System.out.println(di.getB());
+        // PluginFactory pluginFactory = new PluginFactory();
+        // pluginFactory.initContainer();
+        // pluginFactory.initPluginIoc();
+        // pluginFactory.initPlugin();
+        // PluginFactory.instance = pluginFactory;
+        //
+        // DemoImpl demo = (DemoImpl) DynamicBeanUtil.getProxy("demo", null);
+        //
+        // System.out.println(demo.getHellostr() + ":" + demo.getHello());
 
-        DemoImpl demo = (DemoImpl) DynamicBeanUtil.getProxy("demo", null);
-
-        System.out.println(demo.getHellostr() + ":" + demo.getHello());
-
-        RefDemo refDemo = (RefDemo) DynamicBeanUtil.getProxy("refDemo", null);
-        System.out.println(refDemo.getRefStr());
-
-        System.out.println(demo.getHellostr() + ":" + demo.getHello().getWord() + ":" + demo.getRefDemo().getRefStr());
+        // System.out.println(refDemo.getRefStr());
 
     }
+
 }

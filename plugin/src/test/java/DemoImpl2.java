@@ -19,4 +19,12 @@ public class DemoImpl2 extends DemoImpl {
         super(null);
     }
 
+    /*
+     * (non-Javadoc)
+     * @see DemoImpl#getHello()
+     */
+    @Override
+    public Hello getHello() {
+        return super.getHello();
+    }
 }

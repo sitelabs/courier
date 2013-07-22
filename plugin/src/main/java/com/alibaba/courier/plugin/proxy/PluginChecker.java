@@ -40,13 +40,8 @@ public class PluginChecker {
         if (instance == null) {
             return;
         }
-        if (needLoadproxy(instance, proxy)) {
-            return;
-        }
-        if (proxy == null) {
-            return;
-        }
         String key = CHECKSTR + instance.toString();
+
         // 是否有动态bean参数
         Boolean isDynClass = ApplicationParamUtil.getContextParam(key);
         if (isDynClass != null && !isDynClass) {
@@ -57,6 +52,15 @@ public class PluginChecker {
         if (checked != null && checked) {
             return;
         }
+
+        if (needLoadproxy(instance, proxy)) {
+            RequestParamUtil.addContextParam(key, true);
+            return;
+        }
+        if (proxy == null) {
+            return;
+        }
+
         isDynClass = false;// 是否包含了动态Bean属性，如果包含，每次都需要注入
         // Field[] fields = obj.getClass().getDeclaredFields();
         Class<?> clazz = proxy.getClass();

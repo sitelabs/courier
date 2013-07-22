@@ -58,16 +58,22 @@ public class ClassProxy {
 
     public static List<String>                 objectMethodcache = Lists.newArrayList();               // 缓存
                                                                                                         // Object.class的原生public方法定义
-
     static {
-        CtClass cc;
-        try {
-            cc = cp.get(Object.class.getName());
-            for (CtMethod method : cc.getMethods()) {
-                objectMethodcache.add(method.getMethodInfo().toString());
-            }
-        } catch (NotFoundException e) {
+
+        for (Method method : Object.class.getMethods()) {
+            objectMethodcache.add(getMethodDesc(method));
         }
+    }
+
+    private static String getMethodDesc(Method method) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(method.getName());
+        if (method.getParameterTypes() != null) {
+            for (Class<?> clzz : method.getParameterTypes()) {
+                sb.append(clzz.getName());
+            }
+        }
+        return sb.toString();
     }
 
     /**
@@ -128,6 +134,11 @@ public class ClassProxy {
                     if (method.getModifiers() != 1 && method.getModifiers() != 9) {
                         continue;
                     }
+                    String methodDesc = getMethodDesc(method);
+                    if (objectMethodcache.contains(methodDesc)) {
+                        continue;
+                    }
+
                     if (method.getName().equals("init")) {
                         continue;
                     }
@@ -147,10 +158,8 @@ public class ClassProxy {
 
                     String returnTypeName = method.getReturnType().getName();
 
-                    String returnStr = "return ";
                     boolean isVoid = false;// 返回值是否是void
                     if (returnTypeName.equals("void")) {
-                        returnStr = StringUtils.EMPTY;
                         isVoid = true;
                     }
                     List<String> params = Lists.newArrayList();
@@ -167,8 +176,27 @@ public class ClassProxy {
                     if (isVoid && method.getName().startsWith("set") && params.size() == 1) {
                         checkStr = StringUtils.EMPTY;
                     }
+                    StringBuilder body = new StringBuilder();
+                    body.append("{ ");
+                    body.append(checkStr);
 
-                    md.setBody("{ " + checkStr + returnStr + " proxy." + method.getName() + "(" + paramStr + ");}");
+                    String invokeString = method.getName() + "(" + paramStr + ");";
+
+                    if (isVoid) {
+                        body.append("if(proxy!=null){");
+                        body.append("proxy.").append(invokeString);
+                        body.append("}else{ try{");
+                        body.append("super.");
+                    } else {
+                        body.append("if(proxy!=null){");
+                        body.append("return proxy.").append(invokeString);
+                        body.append("}else{ try{");
+                        body.append("return super.");
+                    }
+                    body.append(invokeString).append("}catch (Exception e) {return ");
+                    body.append(getNullVal(method.getReturnType())).append(";}}");
+                    body.append("}");
+                    md.setBody(body.toString());
                     newClazz.addMethod(md);
                 }
             }
@@ -291,4 +319,35 @@ public class ClassProxy {
         return GolbalConstants.PATH_SPLIT + clazz.replace('.', '/');
     }
 
+    /**
+     * 得到对象的Null值
+     * 
+     * @param clazz
+     * @return
+     */
+    public static Object getNullVal(Class<?> clazz) {
+        if (clazz == int.class) {
+            return 0;
+        }
+        if (clazz == long.class) {
+            return "0l";
+        }
+        if (clazz == double.class) {
+            return "0.0";
+        }
+        if (clazz == float.class) {
+            return "0.0f";
+        }
+        if (clazz == short.class) {
+            return 0;
+        }
+        if (clazz == boolean.class) {
+            return false;
+        }
+        if (clazz == byte.class) {
+            return 0;
+        }
+
+        return null;
+    }
 }

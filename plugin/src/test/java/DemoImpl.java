@@ -27,6 +27,13 @@ public class DemoImpl extends Demo {
 
     private boolean bol;
 
+    private long    l;
+    private double  d;
+    private float   f;
+    private short   s;
+
+    private byte    b;
+
     private RefDemo refDemo;
 
     /**
@@ -69,6 +76,76 @@ public class DemoImpl extends Demo {
      */
     public void setRefDemo(RefDemo refDemo) {
         this.refDemo = refDemo;
+    }
+
+    /**
+     * @return the l
+     */
+    public long getL() {
+        return l;
+    }
+
+    /**
+     * @param l the l to set
+     */
+    public void setL(long l) {
+        this.l = l;
+    }
+
+    /**
+     * @return the d
+     */
+    public double getD() {
+        return d;
+    }
+
+    /**
+     * @param d the d to set
+     */
+    public void setD(double d) {
+        this.d = d;
+    }
+
+    /**
+     * @return the f
+     */
+    public float getF() {
+        return f;
+    }
+
+    /**
+     * @param f the f to set
+     */
+    public void setF(float f) {
+        this.f = f;
+    }
+
+    /**
+     * @return the s
+     */
+    public short getS() {
+        return s;
+    }
+
+    /**
+     * @param s the s to set
+     */
+    public void setS(short s) {
+        this.s = s;
+    }
+
+    /**
+     * @return the b
+     */
+    public byte getB() {
+        return b;
+    }
+
+    /**
+     * @param b the b to set
+     */
+    public void setB(byte b) {
+        this.b = b;
     }
 
 }
