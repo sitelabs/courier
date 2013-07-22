@@ -61,11 +61,13 @@ public class PluginChecker {
         for (; clazz != Object.class; clazz = clazz.getSuperclass()) {
             Field[] fields = clazz.getDeclaredFields();
             for (Field field : fields) {
-                checkField(proxy, field, isDynClass);
+                isDynClass = checkField(proxy, field, isDynClass);
+                if (isDynClass) {
+                    ApplicationParamUtil.addContextParam(key, isDynClass);
+                }
             }
         }
 
-        ApplicationParamUtil.addContextParam(key, isDynClass);
         RequestParamUtil.addContextParam(key, true);
     }
 
@@ -102,7 +104,7 @@ public class PluginChecker {
      * @param field
      * @param isDynClass
      */
-    private static void checkField(Object obj, Field field, Boolean isDynClass) {
+    private static boolean checkField(Object obj, Field field, Boolean isDynClass) {
         field.setAccessible(true);
         String fieldName = field.getName();
         boolean isDynBeanField = PluginFactory.instance.getDynamicPluginIDs().contains(fieldName);
@@ -113,21 +115,21 @@ public class PluginChecker {
         // 常量不处理
         Class<?> fieldClz = field.getType();
         if (isPrivateType(fieldClz)) {
-            return;
+            return false;
         }
         try {
             // 如果变量已经有值，则不处理
             if (field.get(obj) != null && !isDynBeanField) {
-                return;
+                return false;
             }
         } catch (Exception e1) {
-            return;
+            return false;
         }
         try {
             // 匹配setXXX方法，如果找到，则说明需要注入插件
             Method method = obj.getClass().getMethod("set" + StringUtils.capitalize(field.getName()), fieldClz);
             if (method == null) {
-                return;
+                return false;
             }
             // 只处理动态插件
             if (!fieldClz.isAssignableFrom(List.class)) {
@@ -141,7 +143,7 @@ public class PluginChecker {
 
         } catch (Exception e) {
         }
-
+        return true;
     }
 
     /**
