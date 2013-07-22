@@ -297,6 +297,8 @@ public class PluginConfigurer {
             return;
         }
 
+        ClassProxy.setPluginIDField(pluginInstance, pluginID);
+
         List<Integer> indexs = pluginIndexs.get(pluginID);
         if (indexs == null) {
             indexs = new ArrayList<Integer>();
@@ -359,13 +361,12 @@ public class PluginConfigurer {
         } else {
             cls = Class.forName(pluginClassName);
         }
-        Object obj = cls.newInstance();
+        Object proxy = cls.newInstance();
         // Ìæ»»Îª¾²Ì¬AOP¶ÔÏó
         Class<?> newC = ClassProxy.create(cls);
         Object newO = newC.newInstance();
-        Field field = newC.getDeclaredField(ClassProxy.PROXY);
-        field.setAccessible(true);
-        field.set(newO, obj);
+
+        ClassProxy.setProxyField(newO, proxy);
 
         return newO;
     }

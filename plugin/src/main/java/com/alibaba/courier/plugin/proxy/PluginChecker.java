@@ -17,7 +17,6 @@ import org.apache.commons.logging.LogFactory;
 
 import com.alibaba.china.courier.util.Utils.ApplicationParamUtil;
 import com.alibaba.china.courier.util.Utils.RequestParamUtil;
-import com.alibaba.courier.plugin.DynamicBean;
 import com.alibaba.courier.plugin.DynamicBeanUtil;
 import com.alibaba.courier.plugin.PluginFactory;
 
@@ -37,11 +36,14 @@ public class PluginChecker {
 
     private static final String CHECKSTR = "checker://";
 
-    public static void check(Object obj) {
-        if (obj == null) {
+    public static void check(Object instance, Object proxy) {
+        if (instance == null) {
             return;
         }
-        String key = CHECKSTR + obj.getClass();
+        if (needLoadproxy(instance, proxy)) {
+            return;
+        }
+        String key = CHECKSTR + proxy.getClass();
         // 是否有动态bean参数
         Boolean isDynClass = ApplicationParamUtil.getContextParam(key);
         if (isDynClass != null && !isDynClass) {
@@ -53,65 +55,102 @@ public class PluginChecker {
             return;
         }
         isDynClass = false;// 是否包含了动态Bean属性，如果包含，每次都需要注入
-        Field[] fields = obj.getClass().getDeclaredFields();
+        // Field[] fields = obj.getClass().getDeclaredFields();
+        Class<?> clazz = proxy.getClass();
 
-        for (Field field : fields) {
-            field.setAccessible(true);
-            String fieldName = field.getName();
-            boolean isDynBeanField = PluginFactory.instance.getDynamicPluginIDs().contains(fieldName);
-            if (isDynBeanField) {
-                isDynClass = true;
-            }
-
-            // 常量不处理
-            Class<?> fieldClz = field.getType();
-            if (isPrivateType(fieldClz)) {
-                continue;
-            }
-            try {
-                // 如果变量已经有值，则不处理
-                if (field.get(obj) != null && !isDynBeanField) {
-                    continue;
-                }
-            } catch (Exception e1) {
-                continue;
-            }
-            try {
-                // 匹配setXXX方法，如果找到，则说明需要注入插件
-                Method method = obj.getClass().getMethod("set" + StringUtils.capitalize(field.getName()), fieldClz);
-                if (method == null) {
-                    continue;
-                }
-                // 判断是否是动态bean，如果是动态bean，则替换pluginId，让容器找到真实的插件
-                String pluginId = isDynBeanField ? fieldName + ClassProxy.PROXY : fieldName;
-                // 只处理动态插件
-                Object val = null;
-                if (fieldClz.isAssignableFrom(List.class)) {
-                    if (isDynBeanField) {
-                        // 动态bean不做链式执行，所以此行为非法
-                        continue;
-                    }
-                    val = PluginFactory.instance.getPlugins(pluginId);
-                } else {
-                    val = PluginFactory.instance.getPlugin(pluginId);
-                }
-                if (val != null) {
-                    try {
-                        Object result = DynamicBeanUtil.load((DynamicBean) val);
-                        method.invoke(obj, result);
-                    } catch (Exception e) {
-                        log.error("", e);
-                    }
-                }
-
-            } catch (Exception e) {
+        for (; clazz != Object.class; clazz = clazz.getSuperclass()) {
+            Field[] fields = clazz.getDeclaredFields();
+            for (Field field : fields) {
+                checkField(proxy, field, isDynClass);
             }
         }
+
         ApplicationParamUtil.addContextParam(key, isDynClass);
         RequestParamUtil.addContextParam(key, true);
     }
 
-    private static boolean isPrivateType(Class<?> clz) {
+    /**
+     * 检查代理类对象是否需要重新加载
+     * 
+     * <pre>
+     * 判断条件：
+     * 1、代理对象为空
+     * 2、该实例是动态Bean
+     * </pre>
+     * 
+     * @param instance
+     * @param proxy
+     */
+    private static boolean needLoadproxy(Object instance, Object proxy) {
+        if (proxy == null) {
+            try {
+                String pluginID = (String) ClassProxy.getFieldVal(ClassProxy.PLUGINID, instance);
+                if (pluginID != null && PluginFactory.instance.getDynamicPluginIDs().contains(pluginID)) {
+                    DynamicBeanUtil.getProxy(pluginID, instance);
+                    return true;
+                }
+            } catch (Exception e) {
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查每个变量
+     * 
+     * @param obj
+     * @param field
+     * @param isDynClass
+     */
+    private static void checkField(Object obj, Field field, Boolean isDynClass) {
+        field.setAccessible(true);
+        String fieldName = field.getName();
+        boolean isDynBeanField = PluginFactory.instance.getDynamicPluginIDs().contains(fieldName);
+        if (isDynBeanField) {
+            isDynClass = true;
+        }
+
+        // 常量不处理
+        Class<?> fieldClz = field.getType();
+        if (isPrivateType(fieldClz)) {
+            return;
+        }
+        try {
+            // 如果变量已经有值，则不处理
+            if (field.get(obj) != null && !isDynBeanField) {
+                return;
+            }
+        } catch (Exception e1) {
+            return;
+        }
+        try {
+            // 匹配setXXX方法，如果找到，则说明需要注入插件
+            Method method = obj.getClass().getMethod("set" + StringUtils.capitalize(field.getName()), fieldClz);
+            if (method == null) {
+                return;
+            }
+            // 只处理动态插件
+            if (!fieldClz.isAssignableFrom(List.class)) {
+                try {
+                    Object result = DynamicBeanUtil.load(fieldName);
+                    method.invoke(obj, result);
+                } catch (Exception e) {
+                    log.error("", e);
+                }
+            }
+
+        } catch (Exception e) {
+        }
+
+    }
+
+    /**
+     * 是否私有原生类型
+     * 
+     * @param clz
+     * @return
+     */
+    public static boolean isPrivateType(Class<?> clz) {
         return clz == int.class || clz == short.class || clz == boolean.class || clz == long.class
                || clz == float.class || clz == double.class || clz == byte.class || clz.getName().startsWith("java.");
     }

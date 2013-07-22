@@ -133,6 +133,10 @@ public class PluginFactory {
     @SuppressWarnings("unchecked")
     private List<PluginInstance> getPlugininstances(String pluginID) {
 
+        if (dynamicPluginIDs.contains(pluginID)) {
+            pluginID += ClassProxy.PROXY;
+        }
+
         if (pluginInstanceCache.containsKey(pluginID)) {
             return pluginInstanceCache.get(pluginID);
         }

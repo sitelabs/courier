@@ -7,16 +7,21 @@
  */
 package com.alibaba.courier.plugin.proxy;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
+import javassist.CannotCompileException;
 import javassist.ClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMethod;
 import javassist.LoaderClassPath;
 import javassist.Modifier;
+import javassist.NotFoundException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -41,14 +46,29 @@ import com.google.common.collect.Maps;
  */
 public class ClassProxy {
 
-    private static final Log                   log              = LogFactory.getLog(ClassProxy.class);
+    private static final Log                   log               = LogFactory.getLog(ClassProxy.class);
 
-    public static final ClassPool              cp               = ClassPool.getDefault();
+    public static final ClassPool              cp                = ClassPool.getDefault();
 
-    public static final String                 PROXY            = "proxy";
-    private static final List<String>          classLoaderCache = Lists.newArrayList();               // 缓存已经添加过的classloader
+    public static final String                 PROXY             = "proxy";
+    public static final String                 PLUGINID          = "plugin_id";
+    private static final List<String>          classLoaderCache  = Lists.newArrayList();               // 缓存已经添加过的classloader
 
-    private static final Map<String, Class<?>> classCache       = Maps.newConcurrentMap();            // 缓存已经生成新的class对象
+    private static final Map<String, Class<?>> classCache        = Maps.newConcurrentMap();            // 缓存已经生成新的class对象
+
+    public static List<String>                 objectMethodcache = Lists.newArrayList();               // 缓存
+                                                                                                        // Object.class的原生public方法定义
+
+    static {
+        CtClass cc;
+        try {
+            cc = cp.get(Object.class.getName());
+            for (CtMethod method : cc.getMethods()) {
+                objectMethodcache.add(method.getMethodInfo().toString());
+            }
+        } catch (NotFoundException e) {
+        }
+    }
 
     /**
      * 添加依赖路径
@@ -70,11 +90,12 @@ public class ClassProxy {
      * @param clazz
      * @return
      */
-    public static Class<?> create(Class<?> clazz) {
+    @SuppressWarnings("unchecked")
+    public static <C> Class<C> create(Class<?> clazz) {
 
         String classNameKey = clazz.getName() + "$joe";// 新的类名
         if (classCache.containsKey(classNameKey)) {
-            return classCache.get(classNameKey);
+            return (Class<C>) classCache.get(classNameKey);
         }
         ClassLoader cl = clazz.getClassLoader();
         try {
@@ -83,78 +104,185 @@ public class ClassProxy {
         } catch (Exception e) {
             addClassPath(new LoaderClassPath(cl));
         }
-        // CtClass cc = cp.get("Hello");
         try {
-
-            CtClass hc = cp.get(clazz.getName());
+            CtClass superClazz = cp.get(clazz.getName());
             // 创建新的class
-            CtClass cc = cp.makeClass(classNameKey);
-            cc.setSuperclass(hc);
+            CtClass newClazz = cp.makeClass(classNameKey);
+            newClazz.setSuperclass(superClazz);
             // 创建 proxy变量 ： 变量的类型为clazz
-            CtField proxyField = new CtField(hc, PROXY, cc);
+            CtField proxyField = new CtField(superClazz, PROXY, newClazz);
             proxyField.setModifiers(Modifier.PUBLIC);
-            cc.addField(proxyField);
+            newClazz.addField(proxyField);
+
+            CtField pluginField = new CtField(cp.get(String.class.getName()), PLUGINID, newClazz);
+            pluginField.setModifiers(Modifier.PUBLIC);
+            newClazz.addField(pluginField);
+
+            initConstructor(superClazz, newClazz);
 
             List<String> methodCaches = Lists.newArrayList();
             // 遍历class的公共方法
-            for (CtMethod method : hc.getDeclaredMethods()) {
-                if (method.getModifiers() != Modifier.PUBLIC) {
-                    continue;
-                }
-                CtMethod md = null;
-                try {
-                    md = new CtMethod(method.getReturnType(), method.getName(), method.getParameterTypes(), cc);
-                } catch (javassist.NotFoundException e) {
-                    Class clz = PluginFactory.loadClass(e.getMessage());
-                    addClassPath(new LoaderClassPath(clz.getClassLoader()));
-                    md = new CtMethod(method.getReturnType(), method.getName(), method.getParameterTypes(), cc);
-                }
+            for (; clazz != Object.class && !clazz.isInterface(); clazz = clazz.getSuperclass()) {
+                CtClass _superClazz = cp.get(clazz.getName());
+                for (Method method : clazz.getDeclaredMethods()) {
+                    if (method.getModifiers() != 1 && method.getModifiers() != 9) {
+                        continue;
+                    }
+                    if (method.getName().equals("init")) {
+                        continue;
+                    }
+                    String key = method.getName();
+                    for (Class<?> ctClass : method.getParameterTypes()) {
+                        key += ctClass.getName();
+                    }
+                    if (methodCaches.contains(key)) {
+                        continue;
+                    }
+                    // 缓存同名的方法，避免当实现接口的时候，会出现重复method
+                    methodCaches.add(key);
 
-                if (method.getName().equals("init")) {
-                    continue;
-                }
+                    CtMethod ctd = getMethod(_superClazz, method);
 
-                String key = method.getName();
-                for (CtClass ctClass : method.getParameterTypes()) {
-                    key += ctClass.getName();
-                }
-                if (methodCaches.contains(key)) {
-                    continue;
-                }
-                // 缓存同名的方法，避免当实现接口的时候，会出现重复method
-                methodCaches.add(key);
+                    CtMethod md = createCtMethod(newClazz, ctd);
 
-                String returnTypeName = method.getReturnType().getName();
-                String returnStr = "return ";
-                boolean isVoid = false;// 返回值是否是void
-                if (returnTypeName.equals("void")) {
-                    returnStr = StringUtils.EMPTY;
-                    isVoid = true;
-                }
-                List<String> params = Lists.newArrayList();
-                for (int i = 0; i < method.getParameterTypes().length; i++) {
-                    params.add("$" + (i + 1));
-                }
-                String paramStr = StringUtils.join(params, GolbalConstants.ARRAY_SPLIT);
-                if (paramStr == null) {
-                    paramStr = StringUtils.EMPTY;
-                }
+                    String returnTypeName = method.getReturnType().getName();
 
-                String checkStr = "com.alibaba.courier.plugin.proxy.PluginChecker.check(proxy);";
-                // 判断是否是set方法，如果是就进行check
-                if (isVoid && method.getName().startsWith("set") && params.size() == 1) {
-                    checkStr = StringUtils.EMPTY;
-                }
+                    String returnStr = "return ";
+                    boolean isVoid = false;// 返回值是否是void
+                    if (returnTypeName.equals("void")) {
+                        returnStr = StringUtils.EMPTY;
+                        isVoid = true;
+                    }
+                    List<String> params = Lists.newArrayList();
+                    for (int i = 0; i < method.getParameterTypes().length; i++) {
+                        params.add("$" + (i + 1));
+                    }
+                    String paramStr = StringUtils.join(params, GolbalConstants.ARRAY_SPLIT);
+                    if (paramStr == null) {
+                        paramStr = StringUtils.EMPTY;
+                    }
 
-                md.setBody("{ " + checkStr + returnStr + " proxy." + method.getName() + "(" + paramStr + ");}");
-                cc.addMethod(md);
+                    String checkStr = "com.alibaba.courier.plugin.proxy.PluginChecker.check(this,proxy);";
+                    // 判断是否是set方法，如果是就进行check
+                    if (isVoid && method.getName().startsWith("set") && params.size() == 1) {
+                        checkStr = StringUtils.EMPTY;
+                    }
+
+                    md.setBody("{ " + checkStr + returnStr + " proxy." + method.getName() + "(" + paramStr + ");}");
+                    newClazz.addMethod(md);
+                }
             }
-            Class rclazz = cc.toClass(cl);
+            Class rclazz = newClazz.toClass(cl);
             classCache.put(classNameKey, rclazz);
             return rclazz;
-
         } catch (Exception e) {
             log.error("", e);
+        }
+        return null;
+    }
+
+    private static CtMethod createCtMethod(CtClass newClazz, CtMethod ctd) throws ClassNotFoundException,
+                                                                          NotFoundException {
+        CtMethod md;
+        try {
+            md = new CtMethod(ctd.getReturnType(), ctd.getName(), ctd.getParameterTypes(), newClazz);
+        } catch (javassist.NotFoundException e) {
+            Class<?> clz = PluginFactory.loadClass(e.getMessage());
+            addClassPath(new LoaderClassPath(clz.getClassLoader()));
+            md = new CtMethod(ctd.getReturnType(), ctd.getName(), ctd.getParameterTypes(), newClazz);
+        }
+        return md;
+    }
+
+    private static void initConstructor(CtClass superClazz, CtClass newClazz) throws NotFoundException,
+                                                                             CannotCompileException {
+        CtConstructor[] ctrs = superClazz.getConstructors();
+        // 判断clazz有无构造函数，如果有，则构造一个空的构造函数（主体内容用 super(null)来替代），用来让类直接被实例化
+        if (ctrs != null && ctrs.length != 0) {
+            CtConstructor supCtr = ctrs[0];
+            CtConstructor ctr = new CtConstructor(null, newClazz);
+            List<String> params = Lists.newArrayList();
+            for (CtClass _clazz : supCtr.getParameterTypes()) {
+                params.add("null");
+            }
+            String body = "{super(" + StringUtils.join(params, GolbalConstants.ARRAY_SPLIT) + ");}";
+            ctr.setBody(body);
+            newClazz.addConstructor(ctr);
+        }
+    }
+
+    private static CtMethod getMethod(CtClass superClazz, Method method) {
+        List<CtClass> methodParamType = Lists.newArrayList();
+        if (method.getParameterTypes() != null) {
+            for (Class<?> clzz : method.getParameterTypes()) {
+                try {
+                    methodParamType.add(cp.get(clzz.getName()));
+                } catch (NotFoundException e) {
+                    try {
+                        Class<?> clz = PluginFactory.loadClass(e.getMessage());
+                        addClassPath(new LoaderClassPath(clz.getClassLoader()));
+                        methodParamType.add(cp.get(clzz.getName()));
+                    } catch (Exception e1) {
+                    }
+                }
+            }
+        }
+        try {
+            return superClazz.getDeclaredMethod(method.getName(), methodParamType.toArray(new CtClass[] {}));
+        } catch (NotFoundException e) {
+        }
+        return null;
+    }
+
+    /**
+     * 设置代理对象
+     * 
+     * @param obj
+     * @param proxy
+     */
+    public static void setProxyField(Object obj, Object proxy) {
+        setField(PROXY, obj, proxy);
+    }
+
+    /**
+     * 设置插件ID值
+     * 
+     * @param obj
+     * @param proxy
+     */
+    public static void setPluginIDField(Object obj, String pluginId) {
+        setField(PLUGINID, obj, pluginId);
+    }
+
+    /**
+     * 设置对象的变量
+     * 
+     * @param fieldName
+     * @param obj
+     * @param proxy
+     */
+    public static void setField(String fieldName, Object obj, Object proxy) {
+        try {
+            Field field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(obj, proxy);
+        } catch (Exception e) {
+        }
+    }
+
+    /**
+     * 获取变量的值
+     * 
+     * @param fieldName
+     * @param obj
+     * @return
+     */
+    public static Object getFieldVal(String fieldName, Object obj) {
+        try {
+            Field field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(obj);
+        } catch (Exception e) {
         }
         return null;
     }
