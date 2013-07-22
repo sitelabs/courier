@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugins xmlns="http://assets.1688.com/xml/ns/plugin.xsd"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://assets.1688.com/xml/ns/plugin.xsd plugin.xsd">
+	
+	<plugin id="demo"   class="DemoLoader"/>
+	<plugin id="hello"   class="HelloLoader"/>
+</plugins>
