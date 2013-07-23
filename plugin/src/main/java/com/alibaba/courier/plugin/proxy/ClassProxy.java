@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.alibaba.china.courier.util.Utils.GolbalConstants;
+import com.alibaba.courier.plugin.DynamicBeanUtil;
 import com.alibaba.courier.plugin.PluginFactory;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -97,7 +98,9 @@ public class ClassProxy {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static <C> Class<C> create(Class<?> clazz) {
+    public static <C> Class<C> create(Class<?> clazz, String pluginId, boolean isPlugin) {
+
+        boolean isDynamicBean = DynamicBeanUtil.isDynamicBean(clazz);
 
         String classNameKey = clazz.getName() + "$joe";// 新的类名
         if (classCache.containsKey(classNameKey)) {
@@ -178,24 +181,33 @@ public class ClassProxy {
                     }
                     StringBuilder body = new StringBuilder();
                     body.append("{ ");
-                    body.append(checkStr);
+                    // body.append(checkStr);
 
                     String invokeString = method.getName() + "(" + paramStr + ");";
-
+                    body.append(clazz.getName() + "  _proxy = proxy; ");
+                    if (!isPlugin) {
+                        body.append("_proxy=  (" + clazz.getName()
+                                    + ")com.alibaba.courier.plugin.DynamicBeanUtil.getProxy(\"" + pluginId + "\");");
+                    }
                     if (isVoid) {
-                        body.append("if(proxy!=null){");
-                        body.append("proxy.").append(invokeString);
+                        body.append("if(_proxy!=null){");
+                        body.append("_proxy.").append(invokeString);
                         body.append("}else{ try{");
                         body.append("super.");
                     } else {
-                        body.append("if(proxy!=null){");
-                        body.append("return proxy.").append(invokeString);
+                        body.append("if(_proxy!=null){");
+                        body.append("return _proxy.").append(invokeString);
                         body.append("}else{ try{");
                         body.append("return super.");
                     }
                     body.append(invokeString).append("}catch (Exception e) {return ");
                     body.append(getNullVal(method.getReturnType())).append(";}}");
                     body.append("}");
+                    if (log.isDebugEnabled()) {
+                        String msg = "the class " + clazz.getName() + "." + method.getName() + " source is: " + body;
+                        // System.out.println(msg);
+                        log.debug(msg);
+                    }
                     md.setBody(body.toString());
                     newClazz.addMethod(md);
                 }
@@ -268,12 +280,12 @@ public class ClassProxy {
      * @param clazz
      * @return
      */
-    public static Object createProxyInstance(Class<?> clazz) {
+    public static Object createProxyInstance(Class<?> clazz, String pluginID) {
         Object proxy;
         try {
             proxy = clazz.newInstance();
             // 替换为静态AOP对象
-            Class<?> newC = ClassProxy.create(clazz);
+            Class<?> newC = ClassProxy.create(clazz, pluginID, true);
             Object newO = newC.newInstance();
             setProxyField(newO, proxy);
             return newO;

@@ -22,7 +22,6 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
-import com.alibaba.china.courier.util.Utils.RequestParamUtil;
 import com.alibaba.courier.plugin.model.PluginInstance;
 import com.alibaba.courier.plugin.proxy.ClassProxy;
 import com.google.common.collect.Lists;
@@ -140,7 +139,7 @@ public class PluginFactory {
         }
         if (pluginInstanceCache.containsKey(pluginID)) {
             List<PluginInstance> plugins = pluginInstanceCache.get(pluginID);
-            checkPlugins(isDyna, plugins, pluginID);
+            // checkPlugins(isDyna, plugins, pluginID);
             return pluginInstanceCache.get(pluginID);
         }
         List<String> plugnInstanceClzs = Lists.newArrayList();// 用来防止同一个plugin被重复添加
@@ -185,7 +184,7 @@ public class PluginFactory {
         if (!plugins.isEmpty()) {
             sortPlugins(plugins);
         }
-        checkPlugins(isDyna, plugins, pluginID);
+        // checkPlugins(isDyna, plugins, pluginID);
         pluginInstanceCache.put(pluginID, plugins);
 
         return plugins;
@@ -199,21 +198,12 @@ public class PluginFactory {
         if (!isDyna) {
             return plugins;
         }
-        String key = pluginID + ".dynamicBean";
-        if (RequestParamUtil.getContextParams().containsKey(key)) {
-            return RequestParamUtil.getContextParam(key);
-        }
-        PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
         for (PluginInstance pluginInstance : plugins) {
             try {
-                Object newO = pluginInstance.getInstance().getClass().newInstance();
-                ClassProxy.setProxyField(newO, pluginInstance.getInstance().getClass().getSuperclass().newInstance());
-                pluginInstance.setInstance(newO);
-                pc.pluginIoc(pluginInstance);
+                pluginInstance.setInstance(DynamicBeanUtil.load(pluginID));
             } catch (Exception e) {
             }
         }
-        RequestParamUtil.addContextParam(key, plugins);
         return plugins;
     }
 

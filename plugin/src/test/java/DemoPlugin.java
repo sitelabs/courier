@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2013 Alibaba.com All right reserved. This software is the
  * confidential and proprietary information of Alibaba.com ("Confidential
@@ -7,20 +6,23 @@
  * into with Alibaba.com.
  */
 /**
- * 类Hello.java的实现描述：TODO 类实现描述
+ * 类DemoPlugin.java的实现描述：TODO 类实现描述
  * 
- * @author joe 2013年7月18日 下午9:04:50
+ * @author joe 2013年7月24日 上午1:22:23
  */
-public class Hello {
+public class DemoPlugin {
 
-    private String word;
+    private Demo demo;
 
-    public String getWord() {
-        return word;
+    public void test() {
+        System.out.println(demo.getHellostr());
     }
 
-    public void setWord(String word) {
-        this.word = word;
+    /**
+     * @param demo the demo to set
+     */
+    public void setDemo(Demo demo) {
+        this.demo = demo;
     }
 
 }

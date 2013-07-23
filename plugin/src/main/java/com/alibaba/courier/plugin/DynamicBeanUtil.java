@@ -12,6 +12,7 @@ import java.util.Map;
 
 import com.alibaba.china.courier.util.Utils.RequestParamUtil;
 import com.alibaba.courier.plugin.proxy.ClassProxy;
+import com.alibaba.courier.plugin.proxy.PluginChecker;
 import com.google.common.collect.Maps;
 
 /**
@@ -36,37 +37,41 @@ public class DynamicBeanUtil {
      */
     @SuppressWarnings("rawtypes")
     public static Object load(String pluginID) {
-        DynamicBean bean = PluginFactory.instance.getPlugin(pluginID);
+        Object bean = PluginFactory.instance.getPlugin(pluginID);
         if (bean == null) {
             return null;
         }
+        if (bean instanceof DynamicBean) {
 
-        Class<?> returnType = cacheMethodReturns.get(pluginID);
-        if (returnType == null) {
-            try {
-                Method method = bean.getClass().getMethod(loadMethodName, null);
-                returnType = method.getReturnType();
-                cacheMethodReturns.put(pluginID, returnType);
-            } catch (Exception e1) {
-                return null;
+            Class<?> returnType = cacheMethodReturns.get(pluginID);
+            if (returnType == null) {
+                try {
+                    Method method = bean.getClass().getMethod(loadMethodName, null);
+                    returnType = method.getReturnType();
+                    cacheMethodReturns.put(pluginID, returnType);
+                } catch (Exception e1) {
+                    return null;
+                }
             }
-        }
 
-        String key = returnType.getName() + proxyCacheStr;
-        Object result = RequestParamUtil.getContextParam(key);
-        if (result != null) {
+            String key = returnType.getName() + proxyCacheStr;
+            Object result = RequestParamUtil.getContextParam(key);
+            if (result != null) {
+                return result;
+            }
+            try {
+                // 获取动态Bean的load方法 返回类型
+                Class<?> proxyClass = ClassProxy.create(returnType, pluginID, false);
+                result = proxyClass.newInstance();
+                ClassProxy.setPluginIDField(result, pluginID);
+            } catch (Exception e) {
+            }
+
+            RequestParamUtil.addContextParam(key, result);
             return result;
+        } else {
+            return bean;
         }
-        try {
-            // 获取动态Bean的load方法 返回类型
-            Class<?> proxyClass = ClassProxy.create(returnType);
-            result = proxyClass.newInstance();
-            ClassProxy.setPluginIDField(result, pluginID);
-        } catch (Exception e) {
-        }
-
-        RequestParamUtil.addContextParam(key, result);
-        return result;
     }
 
     /**
@@ -91,31 +96,41 @@ public class DynamicBeanUtil {
      * @param pluginID
      * @return
      */
-    public static Object getProxy(String pluginID, Object instance) {
+    public static Object getProxy(String pluginID) {
 
         String key = pluginID + realCacheStr;
         if (RequestParamUtil.getContextParams().containsKey(key)) {
             Object result = RequestParamUtil.getContextParam(key);
-            if (instance != null) {
-                Object proxy = ClassProxy.getFieldVal(ClassProxy.PROXY, result);
-                if (proxy != null) {
-                    ClassProxy.setProxyField(instance, proxy);
-                }
-                return instance;
-            }
             return result;
         }
         Object result = getResult(pluginID);
+        Object instance = null;
+        try {
+            Class<?> proxyClass = ClassProxy.create(result.getClass(), pluginID, false);
+            instance = proxyClass.newInstance();
+        } catch (Exception e) {
+        }
+        PluginChecker.check(instance, result);
+        // ClassProxy.setProxyField(instance, result);
+        RequestParamUtil.addContextParam(key, result);
+        return result;
+    }
 
-        if (instance == null) {
-            try {
-                Class<?> proxyClass = ClassProxy.create(result.getClass());
-                instance = proxyClass.newInstance();
-            } catch (Exception e) {
+    /**
+     * 判断是否是动态Bean
+     * 
+     * @param cls
+     * @return
+     */
+    public static boolean isDynamicBean(Class<?> cls) {
+        Class<?>[] interfaces = cls.getInterfaces();
+        if (interfaces != null) {
+            for (Class<?> class1 : interfaces) {
+                if (class1.equals(DynamicBean.class)) {
+                    return true;
+                }
             }
         }
-        ClassProxy.setProxyField(instance, result);
-        RequestParamUtil.addContextParam(key, instance);
-        return instance;
+        return false;
     }
 }

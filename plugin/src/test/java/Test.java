@@ -1,3 +1,4 @@
+import com.alibaba.china.courier.util.Utils.RequestParamUtil;
 import com.alibaba.courier.plugin.DynamicBeanUtil;
 import com.alibaba.courier.plugin.PluginFactory;
 
@@ -26,17 +27,25 @@ public class Test {
         // System.out.println(di.getDL());
         PluginFactory pluginFactory = new PluginFactory();
         pluginFactory.initContainer();
+        PluginFactory.instance = pluginFactory;
         pluginFactory.initPluginIoc();
         pluginFactory.initPlugin();
-        PluginFactory.instance = pluginFactory;
 
-        DemoImpl demo = (DemoImpl) DynamicBeanUtil.getProxy("demo", null);
+        DemoImpl demo = (DemoImpl) DynamicBeanUtil.getProxy("demo");
 
+        demo = (DemoImpl) DynamicBeanUtil.getProxy("demo");
+        System.out.println(demo);
         // demo = (DemoImpl) DynamicBeanUtil.getProxy("demo", demo);
-        System.out.println(demo.getHellostr() + ":" + demo.getHello().getWord() + ";" + demo.getDL());
+        System.out.println(demo.getHellostr());
+        System.out.println(demo.getHello().getWord());
 
-        // System.out.println(refDemo.getRefStr());
+        System.out.println(demo.getRefDemo().getRefStr());
+
+        DemoPlugin dp = pluginFactory.getPlugin("demoPlugin");
+        dp.test();
+        dp.test();
+        RequestParamUtil.clean();
+        dp.test();
 
     }
-
 }

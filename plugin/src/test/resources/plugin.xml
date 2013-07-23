@@ -6,5 +6,6 @@
 	<plugin id="demo"   class="DemoLoader"/>
 	<plugin id="hello"   class="HelloLoader"/>
 	<plugin id="refDemo" class="RefDemoLoader"/>
+	<plugin id="demoPlugin" class="DemoPlugin"/>
 	
 </plugins>

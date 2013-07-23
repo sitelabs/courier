@@ -53,10 +53,10 @@ public class PluginChecker {
             return;
         }
 
-        if (needLoadproxy(instance, proxy)) {
-            RequestParamUtil.addContextParam(key, true);
-            return;
-        }
+        // if (needLoadproxy(instance, proxy)) {
+        // RequestParamUtil.addContextParam(key, true);
+        // return;
+        // }
         if (proxy == null) {
             return;
         }
@@ -95,7 +95,7 @@ public class PluginChecker {
             try {
                 String pluginID = (String) ClassProxy.getFieldVal(ClassProxy.PLUGINID, instance);
                 if (pluginID != null && PluginFactory.instance.getDynamicPluginIDs().contains(pluginID)) {
-                    DynamicBeanUtil.getProxy(pluginID, instance);
+                    // DynamicBeanUtil.getProxy(pluginID, instance);
                     return true;
                 }
             } catch (Exception e) {

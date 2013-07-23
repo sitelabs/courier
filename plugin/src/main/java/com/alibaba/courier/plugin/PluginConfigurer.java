@@ -212,7 +212,9 @@ public class PluginConfigurer {
             if (log.isDebugEnabled()) {
                 log.debug("load plugin:" + pluginID + " success");
             }
+
             field.set(obj, refPlugin);
+
         }
     }
 
@@ -222,7 +224,12 @@ public class PluginConfigurer {
      * @return
      */
     private Object getRealPlugin(boolean isArrayField, String pluginID) {
-        Object refPlugin;
+
+        Object refPlugin = DynamicBeanUtil.load(pluginID);
+        if (refPlugin != null) {
+            return refPlugin;
+        }
+
         if (isArrayField) {
             refPlugin = _pluginFactory.getPlugins(pluginID);
         } else {
@@ -283,16 +290,24 @@ public class PluginConfigurer {
         // create the plugin instance
         Object pluginInstance = null;
         try {
-            pluginInstance = newPluginInstance(pluginClassName);
-            // 登记下动态bean
-            if (pluginInstance instanceof DynamicBean) {
+
+            Class<?> cls = null;
+            if (_pluginFactory.bundleContext != null) {
+                cls = _pluginFactory.bundleContext.getBundle().loadClass(pluginClassName);
+            } else {
+                cls = Class.forName(pluginClassName);
+            }
+            pluginInstance = ClassProxy.createProxyInstance(cls, pluginID);
+            if (DynamicBeanUtil.isDynamicBean(cls)) {
                 PluginFactory pf = PluginFactory.instance == null ? _pluginFactory : PluginFactory.instance;
+                // 登记下动态bean
                 if (pf != null && !pf.getDynamicPluginIDs().contains(pluginID)) {
                     pf.getDynamicPluginIDs().add(pluginID);
                 }
                 pluginID += ClassProxy.PROXY;
                 pluginType.setId(pluginID);
             }
+
         } catch (Exception e) {
             log.error("parse plugin:" + pluginID + " in " + pluginClassName + " error:", e);
             return;
@@ -346,23 +361,6 @@ public class PluginConfigurer {
         }
         plugins.add(instance);
 
-    }
-
-    /**
-     * instantiation the Plugin class
-     * 
-     * @param pluginClassName
-     * @return
-     * @throws Exception
-     */
-    public Object newPluginInstance(String pluginClassName) throws Exception {
-        Class<?> cls = null;
-        if (_pluginFactory.bundleContext != null) {
-            cls = _pluginFactory.bundleContext.getBundle().loadClass(pluginClassName);
-        } else {
-            cls = Class.forName(pluginClassName);
-        }
-        return ClassProxy.createProxyInstance(cls);
     }
 
     /**
