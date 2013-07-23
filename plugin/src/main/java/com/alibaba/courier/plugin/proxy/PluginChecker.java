@@ -40,7 +40,7 @@ public class PluginChecker {
         if (instance == null) {
             return;
         }
-        String key = CHECKSTR + instance.toString();
+        String key = CHECKSTR + instance.getClass().getName() + "@" + Integer.toHexString(instance.hashCode());// instance.toString();
 
         // 是否有动态bean参数
         Boolean isDynClass = ApplicationParamUtil.getContextParam(key);

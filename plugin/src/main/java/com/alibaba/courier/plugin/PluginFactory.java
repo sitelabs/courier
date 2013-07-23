@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
+import com.alibaba.china.courier.util.Utils.RequestParamUtil;
 import com.alibaba.courier.plugin.model.PluginInstance;
 import com.alibaba.courier.plugin.proxy.ClassProxy;
 import com.google.common.collect.Lists;
@@ -132,12 +133,14 @@ public class PluginFactory {
 
     @SuppressWarnings("unchecked")
     private List<PluginInstance> getPlugininstances(String pluginID) {
-
+        boolean isDyna = false;
         if (dynamicPluginIDs.contains(pluginID)) {
             pluginID += ClassProxy.PROXY;
+            isDyna = true;
         }
-
         if (pluginInstanceCache.containsKey(pluginID)) {
+            List<PluginInstance> plugins = pluginInstanceCache.get(pluginID);
+            checkPlugins(isDyna, plugins, pluginID);
             return pluginInstanceCache.get(pluginID);
         }
         List<String> plugnInstanceClzs = Lists.newArrayList();// 用来防止同一个plugin被重复添加
@@ -182,9 +185,30 @@ public class PluginFactory {
         if (!plugins.isEmpty()) {
             sortPlugins(plugins);
         }
-
+        checkPlugins(isDyna, plugins, pluginID);
         pluginInstanceCache.put(pluginID, plugins);
 
+        return plugins;
+    }
+
+    /**
+     * @param isDyna
+     * @param plugins
+     */
+    private List<PluginInstance> checkPlugins(boolean isDyna, List<PluginInstance> plugins, String pluginID) {
+        if (!isDyna) {
+            return plugins;
+        }
+        String key = pluginID + ".dynamicBean";
+        if (RequestParamUtil.getContextParams().containsKey(key)) {
+            return RequestParamUtil.getContextParam(key);
+        }
+
+        for (PluginInstance pluginInstance : plugins) {
+            Object result = ClassProxy.createProxyInstance(pluginInstance.getInstance().getClass());
+            pluginInstance.setInstance(result);
+        }
+        RequestParamUtil.addContextParam(key, plugins);
         return plugins;
     }
 

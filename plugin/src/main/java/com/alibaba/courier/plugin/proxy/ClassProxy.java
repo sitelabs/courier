@@ -263,6 +263,27 @@ public class ClassProxy {
     }
 
     /**
+     * 创建代理对象
+     * 
+     * @param clazz
+     * @return
+     */
+    public static Object createProxyInstance(Class<?> clazz) {
+        Object proxy;
+        try {
+            proxy = clazz.newInstance();
+            // 替换为静态AOP对象
+            Class<?> newC = ClassProxy.create(clazz);
+            Object newO = newC.newInstance();
+            setProxyField(newO, proxy);
+            return newO;
+        } catch (Exception e) {
+            return null;
+        }
+
+    }
+
+    /**
      * 设置代理对象
      * 
      * @param obj

@@ -1,3 +1,5 @@
+import java.io.Serializable;
+
 /*
  * Copyright 2013 Alibaba.com All right reserved. This software is the
  * confidential and proprietary information of Alibaba.com ("Confidential
@@ -10,7 +12,9 @@
  * 
  * @author joe 2013年7月18日 下午9:05:40
  */
-public class DemoImpl extends Demo {
+public class DemoImpl extends Demo implements Serializable {
+
+    private static final long serialVersionUID = 2079839116352271295L;
 
     /**
      * @param hellostr
@@ -33,6 +37,8 @@ public class DemoImpl extends Demo {
     private short   s;
 
     private byte    b;
+
+    private Long    DL;
 
     private RefDemo refDemo;
 
@@ -146,6 +152,14 @@ public class DemoImpl extends Demo {
      */
     public void setB(byte b) {
         this.b = b;
+    }
+
+    public Long getDL() {
+        return DL;
+    }
+
+    public void setDL(Long dL) {
+        DL = dL;
     }
 
 }

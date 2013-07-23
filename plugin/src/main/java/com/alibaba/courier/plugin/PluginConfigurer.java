@@ -362,20 +362,12 @@ public class PluginConfigurer {
         } else {
             cls = Class.forName(pluginClassName);
         }
-        Object proxy = cls.newInstance();
-        // Ìæ»»Îª¾²Ì¬AOP¶ÔÏó
-        Class<?> newC = ClassProxy.create(cls);
-        Object newO = newC.newInstance();
-
-        ClassProxy.setProxyField(newO, proxy);
-
-        return newO;
+        return ClassProxy.createProxyInstance(cls);
     }
 
     /**
      * scan plugin.properties
      */
-    @SuppressWarnings("rawtypes")
     private List<PluginType> scan() {
         if (m == null) {
             try {

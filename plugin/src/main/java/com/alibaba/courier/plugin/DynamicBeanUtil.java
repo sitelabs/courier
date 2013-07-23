@@ -94,14 +94,18 @@ public class DynamicBeanUtil {
     public static Object getProxy(String pluginID, Object instance) {
 
         String key = pluginID + realCacheStr;
-        Object result = RequestParamUtil.getContextParam(key);
-        if (result != null) {
-            if (instance != null && ClassProxy.getFieldVal(ClassProxy.PROXY, instance) == null) {
-                ClassProxy.setProxyField(instance, result);
+        if (RequestParamUtil.getContextParams().containsKey(key)) {
+            Object result = RequestParamUtil.getContextParam(key);
+            if (instance != null) {
+                Object proxy = ClassProxy.getFieldVal(ClassProxy.PROXY, result);
+                if (proxy != null) {
+                    ClassProxy.setProxyField(instance, proxy);
+                }
+                return instance;
             }
             return result;
         }
-        result = getResult(pluginID);
+        Object result = getResult(pluginID);
 
         if (instance == null) {
             try {
@@ -111,7 +115,6 @@ public class DynamicBeanUtil {
             }
         }
         ClassProxy.setProxyField(instance, result);
-
         RequestParamUtil.addContextParam(key, instance);
         return instance;
     }
