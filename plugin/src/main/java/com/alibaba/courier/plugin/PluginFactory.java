@@ -203,10 +203,15 @@ public class PluginFactory {
         if (RequestParamUtil.getContextParams().containsKey(key)) {
             return RequestParamUtil.getContextParam(key);
         }
-
+        PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
         for (PluginInstance pluginInstance : plugins) {
             Object result = ClassProxy.createProxyInstance(pluginInstance.getInstance().getClass());
+
             pluginInstance.setInstance(result);
+            try {
+                pc.pluginIoc(pluginInstance);
+            } catch (Exception e) {
+            }
         }
         RequestParamUtil.addContextParam(key, plugins);
         return plugins;
