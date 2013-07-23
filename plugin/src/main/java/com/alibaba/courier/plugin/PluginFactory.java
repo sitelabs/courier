@@ -205,10 +205,10 @@ public class PluginFactory {
         }
         PluginConfigurer pc = _pc == null ? PluginConfigurer.instance : _pc;
         for (PluginInstance pluginInstance : plugins) {
-            Object result = ClassProxy.createProxyInstance(pluginInstance.getInstance().getClass());
-
-            pluginInstance.setInstance(result);
             try {
+                Object newO = pluginInstance.getInstance().getClass().newInstance();
+                ClassProxy.setProxyField(newO, pluginInstance.getInstance().getClass().getSuperclass().newInstance());
+                pluginInstance.setInstance(newO);
                 pc.pluginIoc(pluginInstance);
             } catch (Exception e) {
             }
