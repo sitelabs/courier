@@ -34,7 +34,6 @@ public class Test {
         DemoImpl demo = (DemoImpl) DynamicBeanUtil.getProxy("demo");
 
         demo = (DemoImpl) DynamicBeanUtil.getProxy("demo");
-        System.out.println(demo);
         // demo = (DemoImpl) DynamicBeanUtil.getProxy("demo", demo);
         System.out.println(demo.getHellostr());
         System.out.println(demo.getHello().getWord());
@@ -43,8 +42,9 @@ public class Test {
 
         DemoPlugin dp = pluginFactory.getPlugin("demoPlugin");
         dp.test();
-        dp.test();
         RequestParamUtil.clean();
+        demo = (DemoImpl) DynamicBeanUtil.getProxy("demo");
+        demo.setHellostr("1111");
         dp.test();
 
     }
