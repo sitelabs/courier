@@ -28,7 +28,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.alibaba.china.courier.util.Utils.GolbalConstants;
-import com.alibaba.courier.plugin.DynamicBeanUtil;
 import com.alibaba.courier.plugin.PluginFactory;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -59,6 +58,9 @@ public class ClassProxy {
 
     public static List<String>                 objectMethodcache = Lists.newArrayList();               // 缓存
                                                                                                         // Object.class的原生public方法定义
+
+    private static Object                      locked            = new Object();
+
     static {
 
         for (Method method : Object.class.getMethods()) {
@@ -100,12 +102,29 @@ public class ClassProxy {
     @SuppressWarnings("unchecked")
     public static <C> Class<C> create(Class<?> clazz, String pluginId, boolean isPlugin) {
 
-        boolean isDynamicBean = DynamicBeanUtil.isDynamicBean(clazz);
-
         String classNameKey = clazz.getName() + "$joe";// 新的类名
         if (classCache.containsKey(classNameKey)) {
             return (Class<C>) classCache.get(classNameKey);
         }
+
+        synchronized (locked) {
+            // 双重锁，保证并发情况，不会重复创建类
+            if (classCache.containsKey(classNameKey)) {
+                return (Class<C>) classCache.get(classNameKey);
+            }
+            return createNewClass(clazz, pluginId, isPlugin, classNameKey);
+        }
+
+    }
+
+    /**
+     * @param clazz
+     * @param pluginId
+     * @param isPlugin
+     * @param classNameKey
+     */
+    @SuppressWarnings("rawtypes")
+    private static Class createNewClass(Class<?> clazz, String pluginId, boolean isPlugin, String classNameKey) {
         ClassLoader cl = clazz.getClassLoader();
         try {
             // 判断当前类库中是否可以超找到class，如果找不到，则添加该classload到仓库中

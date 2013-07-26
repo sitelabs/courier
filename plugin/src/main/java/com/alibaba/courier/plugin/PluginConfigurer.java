@@ -115,6 +115,13 @@ public class PluginConfigurer {
             for (PluginInstance pluginInstance : instances) {
                 try {
                     pluginIoc(pluginInstance);
+
+                    if (pluginInstance.getInstance() instanceof DynamicBean) {
+                        // 预先加载动态Bean的返回对象
+                        String pluginId = pluginInstance.getId().replaceAll(ClassProxy.PROXY, StringUtils.EMPTY);
+                        DynamicBeanUtil.load(pluginId);
+                    }
+
                 } catch (Exception e) {
                     log.error("", e);
                 }

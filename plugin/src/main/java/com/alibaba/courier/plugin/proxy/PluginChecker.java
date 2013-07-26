@@ -36,11 +36,11 @@ public class PluginChecker {
 
     private static final String CHECKSTR = "checker://";
 
-    public static void check(Object instance, Object proxy) {
-        if (instance == null) {
+    public static void check(Object proxy) {
+        if (proxy == null) {
             return;
         }
-        String key = CHECKSTR + instance.getClass().getName() + "@" + Integer.toHexString(instance.hashCode());// instance.toString();
+        String key = CHECKSTR + proxy.getClass().getName();// instance.toString();
 
         // 是否有动态bean参数
         Boolean isDynClass = ApplicationParamUtil.getContextParam(key);
@@ -57,9 +57,6 @@ public class PluginChecker {
         // RequestParamUtil.addContextParam(key, true);
         // return;
         // }
-        if (proxy == null) {
-            return;
-        }
 
         isDynClass = false;// 是否包含了动态Bean属性，如果包含，每次都需要注入
         // Field[] fields = obj.getClass().getDeclaredFields();
@@ -76,33 +73,6 @@ public class PluginChecker {
         }
 
         RequestParamUtil.addContextParam(key, true);
-    }
-
-    /**
-     * 检查代理类对象是否需要重新加载
-     * 
-     * <pre>
-     * 判断条件：
-     * 1、代理对象为空
-     * 2、该实例是动态Bean
-     * </pre>
-     * 
-     * @param instance
-     * @param proxy
-     */
-    private static boolean needLoadproxy(Object instance, Object proxy) {
-        if (proxy == null) {
-            try {
-                String pluginID = (String) ClassProxy.getFieldVal(ClassProxy.PLUGINID, instance);
-                if (pluginID != null && PluginFactory.instance.getDynamicPluginIDs().contains(pluginID)) {
-                    // DynamicBeanUtil.getProxy(pluginID, instance);
-                    return true;
-                }
-            } catch (Exception e) {
-                log.error("", e);
-            }
-        }
-        return false;
     }
 
     /**

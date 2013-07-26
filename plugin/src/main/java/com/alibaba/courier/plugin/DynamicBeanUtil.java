@@ -10,6 +10,7 @@ package com.alibaba.courier.plugin;
 import java.lang.reflect.Method;
 import java.util.Map;
 
+import com.alibaba.china.courier.util.Utils.ApplicationParamUtil;
 import com.alibaba.china.courier.util.Utils.RequestParamUtil;
 import com.alibaba.courier.plugin.proxy.ClassProxy;
 import com.alibaba.courier.plugin.proxy.PluginChecker;
@@ -35,7 +36,6 @@ public class DynamicBeanUtil {
      * @param bean
      * @return
      */
-    @SuppressWarnings("rawtypes")
     public static Object load(String pluginID) {
         Object bean = PluginFactory.instance.getPlugin(pluginID);
         if (bean == null) {
@@ -55,7 +55,7 @@ public class DynamicBeanUtil {
             }
 
             String key = returnType.getName() + proxyCacheStr;
-            Object result = RequestParamUtil.getContextParam(key);
+            Object result = ApplicationParamUtil.getContextParam(key);
             if (result != null) {
                 return result;
             }
@@ -67,7 +67,7 @@ public class DynamicBeanUtil {
             } catch (Exception e) {
             }
 
-            RequestParamUtil.addContextParam(key, result);
+            ApplicationParamUtil.addContextParam(key, result);
             return result;
         } else {
             return bean;
@@ -104,13 +104,7 @@ public class DynamicBeanUtil {
             return result;
         }
         Object result = getResult(pluginID);
-        Object instance = null;
-        try {
-            Class<?> proxyClass = ClassProxy.create(result.getClass(), pluginID, false);
-            instance = proxyClass.newInstance();
-        } catch (Exception e) {
-        }
-        PluginChecker.check(instance, result);
+        PluginChecker.check(result);
         // ClassProxy.setProxyField(instance, result);
         RequestParamUtil.addContextParam(key, result);
         return result;
