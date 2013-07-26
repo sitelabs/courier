@@ -82,17 +82,25 @@ public class DynamicBeanUtil {
      * @param pluginID
      * @return
      */
+    @SuppressWarnings("unchecked")
     public static Object getProxy(String pluginID) {
 
         String key = pluginID + realCacheStr;
-        if (RequestParamUtil.getContextParams().containsKey(key)) {
-            Object result = RequestParamUtil.getContextParam(key);
+
+        Map<String, Object> cache = (Map<String, Object>) RequestParamUtil.getContextParam(realCacheStr);
+        if (cache == null) {
+            cache = Maps.newHashMap();
+            RequestParamUtil.addContextParam(realCacheStr, cache);
+        }
+
+        if (cache.containsKey(key)) {
+            Object result = cache.get(key);
             return result;
         }
         Object result = getResult(pluginID);
         PluginChecker.check(result);
         // ClassProxy.setProxyField(instance, result);
-        RequestParamUtil.addContextParam(key, result);
+        cache.put(key, result);
         return result;
     }
 

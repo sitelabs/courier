@@ -66,6 +66,9 @@ public class Utils {
         }
 
         public static void addContextParam(String key, Object obj) {
+            if (obj == null || key == null) {
+                return;
+            }
             getContextParams().put(key, obj);
         }
 
