@@ -5,11 +5,11 @@
  */
 package com.alibaba.china.courier.util;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.alibaba.china.courier.model.RequestQueryParam;
+import com.google.common.collect.Maps;
 
 public class Utils {
 
@@ -87,7 +87,7 @@ public class Utils {
 
             Map<String, Object> contextParams = contextCache.get();
             if (contextParams == null) {
-                contextParams = new HashMap<String, Object>();
+                contextParams = Maps.newConcurrentMap();
                 contextCache.set(contextParams);
             }
 

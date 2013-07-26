@@ -52,6 +52,9 @@ public class ClassProxy {
 
     public static final String                 PROXY             = "proxy";
     public static final String                 PLUGINID          = "plugin_id";
+
+    public static final String                 CLASSEXT          = "$joe";
+
     private static final List<String>          classLoaderCache  = Lists.newArrayList();               // 缓存已经添加过的classloader
 
     private static final Map<String, Class<?>> classCache        = Maps.newConcurrentMap();            // 缓存已经生成新的class对象
@@ -102,7 +105,7 @@ public class ClassProxy {
     @SuppressWarnings("unchecked")
     public static <C> Class<C> create(Class<?> clazz, String pluginId, boolean isPlugin) {
 
-        String classNameKey = clazz.getName() + "$joe";// 新的类名
+        String classNameKey = clazz.getName() + CLASSEXT;// 新的类名
         if (classCache.containsKey(classNameKey)) {
             return (Class<C>) classCache.get(classNameKey);
         }
@@ -193,20 +196,13 @@ public class ClassProxy {
                         paramStr = StringUtils.EMPTY;
                     }
 
-                    String checkStr = "com.alibaba.courier.plugin.proxy.PluginChecker.check(this,proxy);";
-                    // 判断是否是set方法，如果是就进行check
-                    if (isVoid && method.getName().startsWith("set") && params.size() == 1) {
-                        checkStr = StringUtils.EMPTY;
-                    }
                     StringBuilder body = new StringBuilder();
                     body.append("{ ");
-                    // body.append(checkStr);
 
-                    String invokeString = method.getName() + "(" + paramStr + ");";
+                    String invokeString = new StringBuilder().append(method.getName()).append("(").append(paramStr).append(");").toString();
                     body.append(clazz.getName() + "  _proxy = proxy; ");
                     if (!isPlugin) {
-                        body.append("_proxy=  (" + clazz.getName()
-                                    + ")com.alibaba.courier.plugin.DynamicBeanUtil.getProxy(\"" + pluginId + "\");");
+                        body.append("_proxy=  (").append(clazz.getName()).append(")com.alibaba.courier.plugin.DynamicBeanUtil.getProxy(\"").append(pluginId).append("\");");
                     }
                     if (isVoid) {
                         body.append("if(_proxy!=null){");

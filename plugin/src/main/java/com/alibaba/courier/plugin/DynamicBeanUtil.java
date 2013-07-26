@@ -10,7 +10,6 @@ package com.alibaba.courier.plugin;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import com.alibaba.china.courier.util.Utils.ApplicationParamUtil;
 import com.alibaba.china.courier.util.Utils.RequestParamUtil;
 import com.alibaba.courier.plugin.proxy.ClassProxy;
 import com.alibaba.courier.plugin.proxy.PluginChecker;
@@ -23,12 +22,11 @@ import com.google.common.collect.Maps;
  */
 public class DynamicBeanUtil {
 
-    public static final String                 loadMethodName     = "load";
+    public static final String               loadMethodName     = "load";
 
-    private static final String                proxyCacheStr      = ".load";
-    private static final String                realCacheStr       = ".realload";
+    private static final String              realCacheStr       = ".realload";
 
-    private static final Map<String, Class<?>> cacheMethodReturns = Maps.newConcurrentMap();
+    private static final Map<String, Object> cacheMethodReturns = Maps.newConcurrentMap();
 
     /**
      * 加载动态Bean
@@ -42,33 +40,21 @@ public class DynamicBeanUtil {
             return null;
         }
         if (bean instanceof DynamicBean) {
-
-            Class<?> returnType = cacheMethodReturns.get(pluginID);
-            if (returnType == null) {
-                try {
-                    Method method = bean.getClass().getMethod(loadMethodName, null);
-                    returnType = method.getReturnType();
-                    cacheMethodReturns.put(pluginID, returnType);
-                } catch (Exception e1) {
-                    return null;
-                }
-            }
-
-            String key = returnType.getName() + proxyCacheStr;
-            Object result = ApplicationParamUtil.getContextParam(key);
+            Object result = cacheMethodReturns.get(pluginID);
             if (result != null) {
                 return result;
             }
             try {
+                Method method = bean.getClass().getMethod(loadMethodName, null);
                 // 获取动态Bean的load方法 返回类型
-                Class<?> proxyClass = ClassProxy.create(returnType, pluginID, false);
+                Class<?> proxyClass = ClassProxy.create(method.getReturnType(), pluginID, false);
                 result = proxyClass.newInstance();
                 ClassProxy.setPluginIDField(result, pluginID);
-            } catch (Exception e) {
+                cacheMethodReturns.put(pluginID, result);
+                return result;
+            } catch (Exception e1) {
+                return null;
             }
-
-            ApplicationParamUtil.addContextParam(key, result);
-            return result;
         } else {
             return bean;
         }
