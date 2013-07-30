@@ -35,7 +35,7 @@ public class ObjectInvoker {
         }
         String methodName = (String) args[0];
         Object[] params = null;
-        if (args.length > 1 && !(args.length == 2 && args[1] == null)) {
+        if (args.length > 1) {
             params = new Object[args.length - 1];
             for (int i = 0; i < params.length; i++) {
                 params[i] = args[i + 1];
