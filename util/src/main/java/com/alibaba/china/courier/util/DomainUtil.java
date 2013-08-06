@@ -17,8 +17,10 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class DomainUtil {
 
-    private static final String[] domainList = { ".com", ".co", ".net", ".org", ".cn", ".biz", ".com.cn", ".net.cn",
+    private static final String[] domainList    = { ".com", ".co", ".net", ".org", ".cn", ".biz", ".com.cn", ".net.cn",
             ".org.cn", ".gov.cn", ".name", ".info", ".me", ".so", ".tel", ".mobi", ".asia", ".cc", ".tv", ".hk" };
+
+    private static final String[] privateDomain = { "1688", "alibaba", "taobao" };
 
     /**
      * 根据当前的访问url的后缀来判断是否是真实的顶级域名
@@ -41,12 +43,27 @@ public class DomainUtil {
                     // 1688.com
                     if (split.length == 1) {
                         isTopdomain = true;
+                        return true;
                     }
-                    if (split.length == 2 && split[0].equals("www")) {
-                        // www.1688.com
-                        isTopdomain = true;
+                    if (split.length == 2) {
+                        if (split[0].equals("www")) {
+                            // www.1688.com
+                            isTopdomain = true;
+                            return true;
+                        } else {
+                            // 如果域名不是阿里系的域名，则都认为是顶级域名
+                            boolean isAlibaba = false;
+                            for (String pd : privateDomain) {
+                                if (split[1].equals(pd)) {
+                                    isAlibaba = true;
+                                    break;
+                                }
+                            }
+                            if (!isAlibaba) {
+                                return true;
+                            }
+                        }
                     }
-                    break;
                 }
             }
 
@@ -57,6 +74,6 @@ public class DomainUtil {
     }
 
     public static void main(String[] args) {
-        System.out.println(isRealTopdoamin("http://1688.com"));
+        System.out.println(isRealTopdoamin("http://guolinjixie.com.cn/"));
     }
 }
