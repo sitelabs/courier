@@ -17,7 +17,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class DomainUtil {
 
-    private static final String[] domainList    = { ".com", ".co", ".net", ".org", ".cn", ".biz", ".com.cn", ".net.cn",
+    private static final String[] domainList    = { ".com.cn", ".com", ".co", ".net", ".org", ".cn", ".biz", ".net.cn",
             ".org.cn", ".gov.cn", ".name", ".info", ".me", ".so", ".tel", ".mobi", ".asia", ".cc", ".tv", ".hk" };
 
     private static final String[] privateDomain = { "1688", "alibaba", "taobao" };
@@ -38,8 +38,8 @@ public class DomainUtil {
 
             for (String dl : domainList) {
                 if (host.endsWith(dl)) {
-                    host = host.replaceAll(dl, StringUtils.EMPTY);
-                    String[] split = host.split("\\.");
+                    String temp = host.replaceAll(dl, StringUtils.EMPTY);
+                    String[] split = temp.split("\\.");
                     // 1688.com
                     if (split.length == 1) {
                         isTopdomain = true;
@@ -74,6 +74,6 @@ public class DomainUtil {
     }
 
     public static void main(String[] args) {
-        System.out.println(isRealTopdoamin("http://guolinjixie.com.cn/"));
+        System.out.println(isRealTopdoamin("http://www.guolinjixie.com.cn/"));
     }
 }

@@ -42,8 +42,10 @@ public class ObjectInvoker {
             }
         }
 
+        String key = MethodUtil.getCacheMethodKey(uniqueName, methodName, params);
+
         // 从当前线程缓存内取出缓存结果，避免重复调用
-        R cacheResult = (R) MethodUtil.getCacheMethodResult(uniqueName, methodName, params);
+        R cacheResult = (R) MethodUtil.getCacheMethodResult(key);
         if (cacheResult != null) {
             return cacheResult;
         }
@@ -78,7 +80,7 @@ public class ObjectInvoker {
             }
             r = (R) method.invoke(obj, parameterValues);
         }
-        MethodUtil.cacheMethod(uniqueName, methodName, params, r);
+        MethodUtil.cacheMethod(key, r);
         return r;
 
     }

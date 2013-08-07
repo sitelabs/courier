@@ -24,6 +24,19 @@ public class MethodUtil {
     public static void cacheMethod(Object obj, String method, Object[] args, Object result) {
 
         String key = getCacheMethodKey(obj, method, args);
+        cacheMethod(key, result);
+    }
+
+    /**
+     * 缓存方法结果
+     * 
+     * @param key
+     * @param result
+     */
+    public static void cacheMethod(String key, Object result) {
+        if (result == null) {
+            return;
+        }
         RequestParamUtil.addContextParam(key, result);
     }
 
@@ -60,9 +73,19 @@ public class MethodUtil {
      * @param args
      * @return
      */
-    @SuppressWarnings("unchecked")
     public static <T> T getCacheMethodResult(Object obj, String method, Object[] args) {
         String key = getCacheMethodKey(obj, method, args);
+        return getCacheMethodResult(key);
+    }
+
+    /**
+     * 从缓存中获取方法结果
+     * 
+     * @param key
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getCacheMethodResult(String key) {
         return (T) RequestParamUtil.getContextParam(key);
     }
 
